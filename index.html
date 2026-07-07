@@ -129,6 +129,12 @@
   .data-link{background:none;border:none;color:var(--now);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0}
   .vax-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .vax-tag{background:var(--now-soft);color:var(--now);border-radius:8px;padding:4px 9px;font-size:11.5px;font-weight:600}
+  .org-picker{margin-top:10px}
+  .org-list{margin-top:12px}
+  .org-count{color:var(--muted);font-size:12.5px;margin-bottom:6px;font-weight:600}
+  .org-item{padding:12px 0;border-top:1px solid var(--line)}
+  .org-item b{font-weight:700;font-size:15px}
+  .org-item small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -340,6 +346,14 @@
       <div id="resultBody"></div>
       <div id="travelBox"></div>
       <div id="paceBox"></div>
+      <details class="more" id="orgFinder" style="margin-top:22px">
+        <summary>🏥 내 지역 접종처 찾기 <span class="opt">국가예방접종 위탁의료기관 · 공공데이터</span></summary>
+        <div class="org-picker">
+          <select id="orgSido" class="birth" onchange="onSido()"><option value="">시도 선택</option></select>
+          <select id="orgSgg" class="birth" style="margin-top:8px" onchange="fetchOrgs()"><option value="">시군구 선택</option></select>
+        </div>
+        <div id="orgList" class="org-list"></div>
+      </details>
       <button class="btn btn-save btn-block explain-btn" onclick="explain()">✨ 쉬운 말로 설명 듣기 (AI)</button>
       <div id="aiExplain"></div>
       <div class="disclaimer">
@@ -647,7 +661,7 @@ function startApp(){
   document.getElementById('extraRow').style.display='none';
   liveUpdate();
   showStep(STEP_ORDER.find(s=>!answered.has(s)) || 'age');
-  refreshOutbreak(); refreshDataStatus();
+  refreshOutbreak(); refreshDataStatus(); loadRegions();
 }
 function showStep(id){
   curStep = id;
@@ -847,6 +861,34 @@ function toggleVaxList(){
   const box=document.getElementById('vaxList'); if(!box) return;
   if(box.style.display==='none'){ box.innerHTML=(liveVaxList||[]).map(x=>'<span class="vax-tag">'+escapeHtml(x.name||x.cd)+'</span>').join(''); box.style.display='flex'; }
   else box.style.display='none';
+}
+/* 접종처 찾기 — 지역코드는 로컬 스냅샷, 병의원은 프록시(nip 폴백) */
+let regionsData=null;
+async function loadRegions(){
+  const sel=document.getElementById('orgSido'); if(!sel || regionsData) return;
+  try{ const r=await fetch('data/regions.json'); regionsData=(await r.json()).sido;
+    sel.innerHTML='<option value="">시도 선택</option>'+regionsData.map(s=>'<option value="'+s.cd+'">'+escapeHtml(s.name)+'</option>').join('');
+  }catch(e){}
+}
+function onSido(){
+  const sido=document.getElementById('orgSido').value, sgg=document.getElementById('orgSgg');
+  document.getElementById('orgList').innerHTML='';
+  const s=(regionsData||[]).find(x=>x.cd===sido);
+  sgg.innerHTML='<option value="">시군구 선택</option>'+((s&&s.sggs||[]).map(g=>'<option value="'+g.cd+'">'+escapeHtml(g.name)+'</option>').join(''));
+}
+async function fetchOrgs(){
+  const brtc=document.getElementById('orgSido').value, sgg=document.getElementById('orgSgg').value, box=document.getElementById('orgList');
+  if(!brtc||!sgg){ box.innerHTML=''; return; }
+  if(!AI_API){ box.innerHTML='<div class="ai-note">접종처 실시간 조회는 서버 배포 후 활성화돼요. <a href="https://nip.kdca.go.kr/irhp/mngm/goVcntMngm.do?menuLv=3&menuCd=333" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미에서 찾기 ↗</a></div>'; return; }
+  box.innerHTML='<div class="ai-note">불러오는 중…</div>';
+  try{
+    const r=await fetch(AI_API+'/api/orgs?brtc='+encodeURIComponent(brtc)+'&sgg='+encodeURIComponent(sgg));
+    const d=await r.json();
+    if(d.orgs && d.orgs.length){
+      box.innerHTML='<div class="org-count">이 지역 위탁의료기관 '+(d.total||d.count)+'곳'+(d.total&&d.total>d.count?(' 중 '+d.count+'곳 표시'):'')+'</div>'+
+        d.orgs.map(o=>'<div class="org-item"><b>'+escapeHtml(o.name)+'</b><small>'+escapeHtml(o.addr)+(o.tel?' · '+escapeHtml(o.tel):'')+'</small></div>').join('');
+    } else box.innerHTML='<div class="ai-note">이 지역 결과가 없어요. <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미 확인 ↗</a></div>';
+  }catch(e){ box.innerHTML='<div class="ai-note">조회 실패 — 잠시 후 다시 시도해 주세요.</div>'; }
 }
 
 /* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
