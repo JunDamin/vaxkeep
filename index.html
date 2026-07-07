@@ -177,6 +177,26 @@
   .summary-chips{margin:8px 0 18px}
   .accuracy{margin:2px 0 16px}
   .result-hero .prof{max-width:100%}
+  /* 내 지역 무료 혜택 */
+  .bene-warn{background:#FDF1DE;color:#96590a;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:600;margin:10px 0 4px;line-height:1.45}
+  .bene-warn b{color:#7a4708}
+  .bene-result{margin-top:12px}
+  .bene-item{border-radius:14px;padding:14px;margin-bottom:6px}
+  .bene-item.ok{background:var(--now-soft)}
+  .bene-item.unknown{background:var(--done-soft)}
+  .bene-vac{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .bene-badge{font-size:11px;font-weight:800;padding:3px 8px;border-radius:8px}
+  .bene-badge.free{background:var(--now);color:#fff}
+  .bene-elig,.bene-cost{font-size:13px;color:#37433d;margin-bottom:3px;line-height:1.5}
+  .bene-elig b,.bene-cost b{color:var(--now-ink);font-weight:800;margin-right:4px}
+  .bene-src{font-size:11px;color:var(--muted);margin-top:7px}
+  .bene-note{font-size:12.5px;color:#37433d;line-height:1.5}
+  .bene-note b{color:var(--ink)}
+  .bene-acts{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .bene-btn{appearance:none;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+  .bene-btn.primary{background:var(--now);color:#fff;border-color:var(--now)}
+  .bene-btn:active{transform:scale(.96)}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:700;z-index:100;box-shadow:var(--shadow-lg)}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -394,11 +414,13 @@
       <div id="travelBox"></div>
       <div id="paceBox"></div>
       <details class="more" id="orgFinder" style="margin-top:22px">
-        <summary>🏥 내 지역 접종처 찾기 <span class="opt">국가예방접종 위탁의료기관 · 공공데이터</span></summary>
+        <summary>🏥 내 지역 — 무료 혜택 &amp; 접종처 <span class="opt">AI 수집 · 공공데이터</span></summary>
+        <div class="bene-warn">⚠️ AI가 공공정보를 모아 정리한 <b>참고용</b>이에요. 대상·비용은 수시로 바뀌거나 실제와 다를 수 있으니 <b>접종 전 관할 보건소에 꼭 확인하세요.</b></div>
         <div class="org-picker">
           <select id="orgSido" class="birth" onchange="onSido()"><option value="">시도 선택</option></select>
-          <select id="orgSgg" class="birth" style="margin-top:8px" onchange="fetchOrgs()"><option value="">시군구 선택</option></select>
+          <select id="orgSgg" class="birth" style="margin-top:8px" onchange="onRegionPick()"><option value="">시군구 선택</option></select>
         </div>
+        <div id="beneResult" class="bene-result"></div>
         <div id="orgList" class="org-list"></div>
       </details>
       <button class="btn btn-save btn-block explain-btn" onclick="explain()" style="display:none">✨ 쉬운 말로 설명 듣기 (AI)</button>
@@ -710,7 +732,7 @@ function startApp(){
   document.getElementById('extraRow').style.display='none';
   liveUpdate();
   showStep(STEP_ORDER.find(s=>!answered.has(s)) || 'age');
-  refreshOutbreak(); refreshDataStatus(); loadRegions();
+  refreshOutbreak(); refreshDataStatus(); loadRegions(); loadBenefits();
 }
 function showStep(id){
   curStep = id;
@@ -921,7 +943,7 @@ async function loadRegions(){
 }
 function onSido(){
   const sido=document.getElementById('orgSido').value, sgg=document.getElementById('orgSgg');
-  document.getElementById('orgList').innerHTML='';
+  document.getElementById('orgList').innerHTML=''; document.getElementById('beneResult').innerHTML='';
   const s=(regionsData||[]).find(x=>x.cd===sido);
   sgg.innerHTML='<option value="">시군구 선택</option>'+((s&&s.sggs||[]).map(g=>'<option value="'+g.cd+'">'+escapeHtml(g.name)+'</option>').join(''));
 }
@@ -939,6 +961,60 @@ async function fetchOrgs(){
     } else box.innerHTML='<div class="ai-note">이 지역 결과가 없어요. <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미 확인 ↗</a></div>';
   }catch(e){ box.innerHTML='<div class="ai-note">조회 실패 — 잠시 후 다시 시도해 주세요.</div>'; }
 }
+
+/* 내 지역 무료 혜택 — AI 수집(benefits.json). 경고·출처 + 링크 없는 검색안내 공유(피싱 예방) */
+let benefitsData=null;
+async function loadBenefits(){ if(benefitsData) return benefitsData; try{ const r=await fetch('data/benefits.json'); benefitsData=await r.json(); }catch(e){ benefitsData={items:[]}; } return benefitsData; }
+function onRegionPick(){ showBenefit(); fetchOrgs(); }
+function beneItemByCd(cd){ return ((benefitsData&&benefitsData.items)||[]).find(x=>x.cd===cd); }
+function sggName(sidoCd,sggCd){ const s=(regionsData||[]).find(x=>x.cd===sidoCd); const g=s&&(s.sggs||[]).find(x=>x.cd===sggCd); return g?g.name:''; }
+function beneSearchUrl(region){ return 'https://search.naver.com/search.naver?query='+encodeURIComponent(region+' 대상포진 예방접종 지원'); }
+async function showBenefit(){
+  const sidoCd=document.getElementById('orgSido').value, sggCd=document.getElementById('orgSgg').value, box=document.getElementById('beneResult');
+  if(!sggCd){ box.innerHTML=''; return; }
+  await loadBenefits();
+  const region=sggName(sidoCd,sggCd)||'이 지역';
+  const it=beneItemByCd(sggCd);
+  const checkUrl=(it&&it.checkUrl)?it.checkUrl:beneSearchUrl(region);
+  const acts='<div class="bene-acts">'
+    +'<button class="bene-btn primary" onclick="shareBenefit(\''+sggCd+'\')">📤 공유하기</button>'
+    +'<button class="bene-btn" onclick="copyBenefit(\''+sggCd+'\')">문구 복사</button>'
+    +'<a class="bene-btn" target="_blank" rel="noopener" href="'+escapeHtml(checkUrl)+'">보건소·출처 확인 ↗</a></div>';
+  if(it && it.status==='confirmed'){
+    box.innerHTML='<div class="bene-item ok">'
+      +'<div class="bene-vac">💉 대상포진 <span class="bene-badge free">무료·지원 대상</span></div>'
+      +'<div class="bene-elig"><b>대상</b>'+escapeHtml(it.eligibility||'-')+'</div>'
+      +(it.cost?'<div class="bene-cost"><b>지원</b>'+escapeHtml(it.cost)+'</div>':'')
+      +'<div class="bene-src">출처 '+escapeHtml(it.sourceName||'공공정보')+' · AI 확인 '+escapeHtml(String(benefitsData.collectedAt||'').slice(0,7))+'</div>'
+      +acts+'</div>';
+  } else if(it){
+    box.innerHTML='<div class="bene-item unknown"><div class="bene-vac">💉 대상포진</div>'
+      +'<div class="bene-note"><b>'+escapeHtml(region)+' 정보는 아직 확인하지 못했어요</b> (혜택이 없다는 뜻이 아니에요). 아래에서 직접 확인해 보세요.</div>'+acts+'</div>';
+  } else {
+    box.innerHTML='<div class="bene-item unknown"><div class="bene-vac">💉 대상포진</div>'
+      +'<div class="bene-note">이 지역은 <b>아직 수집 전</b>이에요 (현재 서울부터 순차 확대 중). 검색으로 바로 확인할 수 있어요.</div>'+acts+'</div>';
+  }
+}
+function beneShareText(cd){
+  const it=beneItemByCd(cd);
+  const region=it?it.region:(sggName(document.getElementById('orgSido').value,cd)||'우리 동네');
+  const q="'"+region+" 대상포진 예방접종 지원'";
+  let msg;
+  if(it&&it.status==='confirmed') msg='['+region+'] 대상포진 예방접종 무료·지원 대상일 수 있어요! 네이버에 '+q+' 검색해서 확인하세요. (부모님도 챙기세요 🙌)';
+  else msg='['+region+'] 무료 예방접종 혜택 확인해 보세요 — 네이버에 '+q+' 검색! (백신 챙겨)';
+  return {msg, region};
+}
+async function shareBenefit(cd){
+  const {msg}=beneShareText(cd);
+  if(navigator.share){ try{ await navigator.share({title:'백신 챙겨', text:msg}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(msg); toast('공유 문구를 복사했어요'); }catch(e){ prompt('복사해서 공유하세요', msg); }
+}
+async function copyBenefit(cd){
+  const {msg}=beneShareText(cd);
+  try{ await navigator.clipboard.writeText(msg); toast('문구를 복사했어요'); }catch(e){ prompt('복사하세요', msg); }
+}
+let _toastT;
+function toast(m){ let t=document.getElementById('_toast'); if(!t){ t=document.createElement('div'); t.id='_toast'; t.className='toast'; document.body.appendChild(t);} t.textContent=m; t.style.display='block'; clearTimeout(_toastT); _toastT=setTimeout(()=>{t.style.display='none';},1800); }
 
 /* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
 function getTravel(){ const v=document.getElementById('travel').value; if(!v) return null; const d=new Date(v); return isNaN(d)?null:d; }
@@ -1043,7 +1119,7 @@ function renderPace(groups, m, cond, birth){
     </div>`; }).join('');
   box.innerHTML=`<div class="pace">
     <div class="pace-h">📅 접종 페이스메이커</div>
-    <div class="pace-sub">나이·조건에 맞춰 ‘언제 뭘 맞아야 하는지’ 순서대로. 캘린더에 넣으면 접종일에 알림이 와요.</div>
+    <div class="pace-sub">나이·조건에 맞춘 접종 순서예요. <b>＋캘린더</b>를 누르면 일정 파일(.ics)이 내려받아지고, 그 파일을 열면 구글·애플 등 <b>기본 캘린더에 자동 등록</b>돼 접종일에 알림이 와요.</div>
     <div class="pace-list">${rows}</div>
     <div class="pace-actions">
       <button class="btn btn-bell" onclick="enableReminders()">🔔 앱 알림 켜기</button>
@@ -1068,8 +1144,8 @@ function downloadICS(name, body){
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'}));
   a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
 }
-function addOne(i){ const e=currentPace[i]; if(e) downloadICS('vaccine-'+(i+1)+'.ics', buildEvent(e)); }
-function addAll(){ if(currentPace.length) downloadICS('vaccine-schedule.ics', currentPace.map(buildEvent).join('\r\n')); }
+function addOne(i){ const e=currentPace[i]; if(e){ downloadICS('vaccine-'+(i+1)+'.ics', buildEvent(e)); toast('일정 파일을 내려받았어요 · 열면 캘린더에 등록돼요'); } }
+function addAll(){ if(currentPace.length){ downloadICS('vaccine-schedule.ics', currentPace.map(buildEvent).join('\r\n')); toast('전체 일정을 내려받았어요 · 파일을 열면 캘린더에 등록돼요'); } }
 /* 앱 내 알림 (예정일에 앱 열면 알림) — 진짜 백그라운드 푸시는 서버 필요, 2단계 */
 function enableReminders(){
   if(!('Notification' in window)){ alert('이 브라우저는 알림을 지원하지 않아요. ‘전체 캘린더에 추가’를 이용하세요.'); return; }
