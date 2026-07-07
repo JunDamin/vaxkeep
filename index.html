@@ -215,6 +215,15 @@
   .cocoon-banner b{color:#5a3d0e}
   .cocoon-share{appearance:none;border:none;background:var(--now);color:#fff;border-radius:9px;padding:6px 11px;font-family:inherit;font-weight:800;font-size:12px;margin-top:8px;cursor:pointer}
   .cocoon-share:active{transform:scale(.96)}
+  /* 역할 선택 바텀시트 */
+  .role-overlay{position:fixed;inset:0;background:rgba(14,26,21,.42);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .role-sheet{background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom));box-shadow:var(--shadow-lg);animation:pop .25s cubic-bezier(.2,.85,.25,1)}
+  .role-title{font-weight:800;font-size:18px;text-align:center;color:var(--ink);letter-spacing:-.02em}
+  .role-hint{text-align:center;color:var(--muted);font-size:12.5px;margin:5px 0 16px}
+  .role-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .role-btn{appearance:none;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:15px 8px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink);cursor:pointer;transition:transform .1s,background .15s,border-color .15s}
+  .role-btn:active{transform:scale(.94);background:var(--now-soft);border-color:var(--now)}
+  .role-cancel{margin-top:14px;width:100%;appearance:none;border:none;background:var(--paper);border-radius:14px;padding:14px;font-family:inherit;font-weight:700;font-size:14px;color:var(--muted);cursor:pointer}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -455,10 +464,19 @@
       <div id="dataStatus" class="data-status"></div>
     </div>
 
-    <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 가족 프로필로 저장</button>
+    <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 이 사람 가족에 추가</button>
     <p class="footer">백신 챙겨 · Vaxkeep · 흩어진 지침을 하나의 결정으로</p>
   </div>
 </section>
+
+<div id="rolePicker" class="role-overlay" style="display:none" onclick="if(event.target===this)closeRolePicker()">
+  <div class="role-sheet">
+    <div class="role-title">누구의 정보인가요?</div>
+    <div class="role-hint">역할을 고르면 저장돼요 · 같은 역할은 자동으로 번호가 붙어요</div>
+    <div class="role-grid" id="roleGrid"></div>
+    <button class="role-cancel" onclick="closeRolePicker()">취소</button>
+  </div>
+</div>
 
 <script>
 /* ---------- navigation ---------- */
@@ -893,15 +911,31 @@ function renderProfiles(){
     <button class="pf-load" onclick="loadProfile('${p.id}')">${escapeHtml(p.name)}<span class="pf-sub">${pfLabel(p)}</span></button>
     <button class="pf-del" onclick="delProfile('${p.id}')" aria-label="삭제">×</button></span>`).join('');
 }
+/* 역할 버튼 + 자동 번호로 저장 (이름 타이핑 없이) */
+const ROLES=['나','엄마','아빠','첫째 아이','둘째 아이','셋째 아이','할머니','할아버지','이모','고모','삼촌','기타'];
+let pendingForm=null;
 function saveProfile(){
   const f=readForm();
   if(!f.age){ alert('나이를 먼저 입력해 주세요.'); return; }
-  const name=(prompt('프로필 이름을 정하세요 (예: 나, 첫째 아이)')||'').trim();
-  if(!name) return;
-  const arr=loadProfiles();
-  const id='p'+Date.now().toString(36);
+  pendingForm=f;
+  document.getElementById('roleGrid').innerHTML=ROLES.map(r=>'<button class="role-btn" onclick="saveWithRole(\''+r+'\')">'+r+'</button>').join('');
+  document.getElementById('rolePicker').style.display='flex';
+}
+function closeRolePicker(){ document.getElementById('rolePicker').style.display='none'; pendingForm=null; }
+function uniqueName(base){
+  const names=new Set(loadProfiles().map(p=>p.name));
+  if(!names.has(base)) return base;
+  let n=2; while(names.has(base+' '+n)) n++; return base+' '+n;
+}
+function saveWithRole(role){
+  const f=pendingForm||readForm(); if(!f||!f.age){ closeRolePicker(); return; }
+  let base=role;
+  if(role==='기타'){ base=(prompt('이 사람을 뭐라고 부를까요?')||'').trim(); if(!base){ return; } }
+  const name=uniqueName(base);
+  const arr=loadProfiles(); const id='p'+Date.now().toString(36);
   arr.push(Object.assign({id,name},f));
-  storeProfiles(arr); renderProfiles(); flashHint('✓ ‘'+name+'’ 프로필을 이 기기에 저장했어요');
+  storeProfiles(arr); renderProfiles(); closeRolePicker();
+  flashHint('✓ ‘'+name+'’ 저장했어요');
 }
 function loadProfile(id){
   const p=loadProfiles().find(x=>x.id===id); if(!p) return;
