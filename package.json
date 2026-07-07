@@ -1,0 +1,9 @@
+{
+  "name": "vaxkeep",
+  "private": true,
+  "type": "module",
+  "description": "백신 챙겨 (Vaxkeep) — 2단계 AI 층 serverless functions",
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}

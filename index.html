@@ -106,6 +106,9 @@
   .pace-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #d3e6dd}
   .pace-actions .btn{padding:12px 16px;font-size:14px;flex:1;min-width:150px}
   .btn-bell{background:var(--now)} .btn-cal{background:#fff;color:var(--now);border:1px solid var(--now)}
+  .explain-btn{margin-top:16px}
+  .ai-box{margin-top:14px;background:var(--now-soft);border:1px solid #cfe4da;border-radius:var(--radius);padding:18px;font-size:14.5px;color:#22453b;line-height:1.75}
+  .ai-note{margin-top:14px;color:var(--muted);font-size:13px;background:#F3F0EA;border:1px solid var(--line);border-radius:12px;padding:14px}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -310,6 +313,8 @@
     <div id="resultBody"></div>
     <div id="travelBox"></div>
     <div id="paceBox"></div>
+    <button class="btn btn-save btn-block explain-btn" onclick="explain()">✨ 쉬운 말로 설명 듣기 (AI)</button>
+    <div id="aiExplain"></div>
 
     <div class="disclaimer">
       <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
@@ -355,9 +360,35 @@ function selected(group){
 }
 
 /* ---------- natural-language quick-fill (heuristic, no backend) ---------- */
-function autofill(){
-  const t = (document.getElementById('nlText').value||'').replace(/\s+/g,' ');
-  if(!t.trim()){ flashHint('문장을 먼저 입력해 주세요'); return; }
+const AI_API = ''; // 2단계: Vercel API URL(예 'https://vaxkeep-api.vercel.app') 입력 시 LLM 파싱·설명 활성화
+let lastResult = null;
+async function autofill(){
+  const t = (document.getElementById('nlText').value||'').replace(/\s+/g,' ').trim();
+  if(!t){ flashHint('문장을 먼저 입력해 주세요'); return; }
+  if(AI_API){
+    try{
+      flashHint('AI가 문장을 읽는 중…');
+      const r = await fetch(AI_API+'/api/parse',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t})});
+      if(!r.ok) throw new Error('api');
+      applyParsed(await r.json());
+      flashHint('✓ AI가 정보를 채웠어요 — 확인 후 결과를 보세요');
+      return;
+    }catch(e){ /* 실패 시 아래 휴리스틱으로 폴백 */ }
+  }
+  autofillHeuristic(t);
+}
+function applyParsed(p){
+  if(p.age!=null){ document.getElementById('age').value=p.age;
+    const us=document.querySelector('#unitChips .chip[data-v="'+(p.unit==='month'?'month':'year')+'"]'); if(us) segToggle(us,'unitChips'); }
+  document.querySelectorAll('#genderChips .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+  if(p.gender) setSeg(p.gender);
+  ['condChips','histChips'].forEach(g=>document.querySelectorAll('#'+g+' .chip').forEach(c=>c.setAttribute('aria-pressed','false')));
+  (p.cond||[]).forEach(v=>setChip('condChips',v,true));
+  (p.hist||[]).forEach(v=>setChip('histChips',v,true));
+  if(p.region!=null) document.getElementById('travelRegion').value=p.region||'';
+  if(p.travelDate) document.getElementById('travel').value=p.travelDate;
+}
+function autofillHeuristic(t){
   let hits=0;
   const mMonth = t.match(/(\d{1,2})\s*(?:개월|달)/);
   const mYear  = t.match(/(\d{1,3})\s*(?:세|살)/);
@@ -555,9 +586,26 @@ function showResult(){
   if(n===0 && groups.later.length===0){
     body.innerHTML += `<div class="empty" style="margin-top:14px">현재 조건에서 새로 권장되는 접종이 없어요. 독감 시즌(매년 10~11월)은 잊지 마세요!</div>`;
   }
+  lastResult = {
+    profile: prof,
+    now: groups.now.map(x=>({name:x.v.name, disease:x.v.disease, free:x.free, why:(typeof x.v.why==='function'?x.v.why(m,cond):x.v.why)})),
+    later: groups.later.map(x=>({name:x.v.name, disease:x.v.disease})),
+    done: groups.done.map(x=>({name:x.v.name}))
+  };
+  document.getElementById('aiExplain').innerHTML='';
   renderTravel(groups);
   renderPace(groups, m, cond, birth);
   go('result');
+}
+async function explain(){
+  const box=document.getElementById('aiExplain'); if(!box||!lastResult) return;
+  if(!AI_API){ box.innerHTML='<div class="ai-note">✨ AI 개인화 설명은 2단계 서버(Vercel) 배포 후 활성화돼요. 지금은 규칙 엔진 결과와 아래 근거 링크를 참고하세요.</div>'; return; }
+  box.innerHTML='<div class="ai-note">AI가 설명을 작성하는 중…</div>';
+  try{
+    const r=await fetch(AI_API+'/api/explain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lastResult)});
+    const d=await r.json();
+    box.innerHTML='<div class="ai-box">✨ '+escapeHtml((d.text||'설명을 불러오지 못했어요.').trim()).replace(/\n/g,'<br>')+'</div>';
+  }catch(e){ box.innerHTML='<div class="ai-note">설명 생성에 실패했어요. 잠시 후 다시 시도해 주세요.</div>'; }
 }
 function renderGroup(title,color,cls,items,m,cond){
   if(!items.length) return '';
