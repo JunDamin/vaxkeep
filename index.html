@@ -642,6 +642,7 @@ function startApp(){
   document.getElementById('extraRow').style.display='none';
   liveUpdate();
   showStep(STEP_ORDER.find(s=>!answered.has(s)) || 'age');
+  refreshOutbreak();
 }
 function showStep(id){
   curStep = id;
@@ -807,10 +808,24 @@ const VMETA={
 function metaOf(id){ return VMETA[id]||{}; }
 
 /* 유행/시즌 경보 — 현재는 시즌 규칙(독감 10~2월). 실시간 감염병 표본감시 API 연동은 2단계 */
+let liveOutbreak = null; // /api/outbreak 응답 캐시 (없으면 시즌 규칙 폴백)
 function activeAlerts(){
-  const a={}, mo=new Date().getMonth();
+  const a={};
+  if(liveOutbreak && liveOutbreak.flu && liveOutbreak.flu.active){
+    a['flu']={label:'인플루엔자 유행 '+(liveOutbreak.flu.level||'주의')+' (실시간 표본감시)'};
+    return a;
+  }
+  const mo=new Date().getMonth();
   if(mo>=9 || mo<=1) a['flu']={label:'인플루엔자 유행 시즌'};
   return a;
+}
+async function refreshOutbreak(){
+  if(!AI_API) return; // 서버 없으면 시즌 규칙 사용
+  try{
+    const r=await fetch(AI_API+'/api/outbreak'); if(!r.ok) return;
+    const d=await r.json();
+    if(d && d.flu){ liveOutbreak=d; if(document.getElementById('resultArea').style.display!=='none') liveUpdate(); }
+  }catch(e){}
 }
 
 /* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
