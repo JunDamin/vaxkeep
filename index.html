@@ -558,9 +558,9 @@ function ageLabel(m){
   if(m<24) return '생후 '+m+'개월';
   return '만 '+Math.floor(m/12)+'세';
 }
-function showResult(){
+function renderResultInPlace(){
   const raw = parseInt(document.getElementById('age').value,10);
-  if(isNaN(raw) || raw<0){ alert('나이를 입력해 주세요.'); return; }
+  if(isNaN(raw) || raw<0){ return false; }
   const unit = selected('unitChips')[0] || 'year';
   const m = ageToMonths(raw, unit);
   const cond = new Set(selected('condChips'));
@@ -604,11 +604,18 @@ function showResult(){
     later: groups.later.map(x=>({name:x.v.name, disease:x.v.disease})),
     done: groups.done.map(x=>({name:x.v.name}))
   };
-  document.getElementById('aiExplain').innerHTML='';
   renderTravel(groups);
   renderPace(groups, m, cond, birth);
-  go('result');
+  return true;
 }
+function liveUpdate(){
+  const area=document.getElementById('resultArea');
+  const ok = renderResultInPlace();
+  if(area) area.style.display = ok ? '' : 'none';
+  if(ok){ const ax=document.getElementById('aiExplain'); if(ax) ax.innerHTML=''; }
+  return ok;
+}
+function showResult(){ if(renderResultInPlace()){ document.getElementById('aiExplain').innerHTML=''; go('result'); } else { alert('나이를 입력해 주세요.'); } }
 async function explain(){
   const box=document.getElementById('aiExplain'); if(!box||!lastResult) return;
   if(!AI_API){ box.innerHTML='<div class="ai-note">✨ AI 개인화 설명은 2단계 서버(Vercel) 배포 후 활성화돼요. 지금은 규칙 엔진 결과와 아래 근거 링크를 참고하세요.</div>'; return; }
