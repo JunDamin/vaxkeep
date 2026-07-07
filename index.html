@@ -81,6 +81,31 @@
     border-radius:14px;padding:14px 18px;box-shadow:var(--shadow)}
   .age-row input{width:82px;border:none;outline:none;font-family:inherit;font-size:30px;font-weight:800;
     color:var(--ink);background:transparent;letter-spacing:-.02em}
+  .birth{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    font-family:inherit;font-size:16px;color:var(--ink);box-shadow:var(--shadow);max-width:220px}
+
+  .pace{margin-top:36px;background:var(--now-soft);border:1px solid #cfe4da;border-radius:var(--radius);padding:20px 20px 8px}
+  .pace-h{display:flex;align-items:center;gap:9px;font-weight:800;font-size:16px;margin-bottom:4px}
+  .pace-sub{color:#3D6E5F;font-size:12.5px;margin-bottom:16px}
+  .pace-list{position:relative;margin:4px 0}
+  .pace-item{position:relative;display:flex;align-items:center;gap:12px;padding:13px 0 13px 24px}
+  .pace-item::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:2px;background:#cfe4da}
+  .pace-item:first-child::before{top:50%}
+  .pace-item:last-child::before{bottom:50%}
+  .pace-node{position:absolute;left:0;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;
+    background:var(--now);border:2px solid #fff;box-shadow:0 0 0 2px #cfe4da}
+  .pace-item.soon .pace-node{background:var(--later);box-shadow:0 0 0 2px #ecdcc2}
+  .pace-when{flex:0 0 84px;font-weight:800;font-size:13px;color:var(--now);line-height:1.25}
+  .pace-item.soon .pace-when{color:var(--later)}
+  .pace-when small{display:block;color:#6B9184;font-weight:600;font-size:11px}
+  .pace-name{flex:1;font-weight:700;font-size:15px}
+  .pace-name small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+  .pace-add{border:1px solid var(--now);background:#fff;color:var(--now);border-radius:9px;padding:8px 11px;
+    font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:background .15s}
+  .pace-add:hover{background:#fff;box-shadow:0 4px 12px rgba(18,133,106,.16)}
+  .pace-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid #d3e6dd}
+  .pace-actions .btn{padding:12px 16px;font-size:14px;flex:1;min-width:150px}
+  .btn-bell{background:var(--now)} .btn-cal{background:#fff;color:var(--now);border:1px solid var(--now)}
 
   .chips{display:flex;flex-wrap:wrap;gap:10px}
   .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;
@@ -199,6 +224,11 @@
     </div>
 
     <div class="field">
+      <div class="label">생년월 <span class="opt">선택 · 정확한 접종일 계산</span></div>
+      <input class="birth" id="birth" type="month" max="2026-12" />
+    </div>
+
+    <div class="field">
       <div class="label">성별</div>
       <div class="chips" id="genderChips">
         <button class="chip seg" data-v="여" aria-pressed="false" onclick="segToggle(this,'genderChips')">여성</button>
@@ -249,6 +279,7 @@
       <p class="prof" id="resultProf"></p>
     </div>
     <div id="resultBody"></div>
+    <div id="paceBox"></div>
 
     <div class="disclaimer">
       <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
@@ -463,6 +494,7 @@ function showResult(){
   const hist = new Set(selected('histChips'));
   const gender = selected('genderChips')[0] || '';
   if(gender==='남') cond.delete('임신');
+  const birth = getBirth();
 
   const groups = {now:[], later:[], done:[]};
   VACCINES.forEach(v=>{
@@ -485,6 +517,7 @@ function showResult(){
   if(n===0 && groups.later.length===0){
     body.innerHTML += `<div class="empty" style="margin-top:14px">현재 조건에서 새로 권장되는 접종이 없어요. 독감 시즌(매년 10~11월)은 잊지 마세요!</div>`;
   }
+  renderPace(groups, m, cond, birth);
   go('result');
 }
 function renderGroup(title,color,cls,items,m,cond){
@@ -520,10 +553,12 @@ function loadProfiles(){ try{ return JSON.parse(localStorage.getItem(PKEY))||[];
 function storeProfiles(a){ try{ localStorage.setItem(PKEY, JSON.stringify(a)); }catch(e){} }
 function readForm(){
   return { age:document.getElementById('age').value, unit:selected('unitChips')[0]||'year',
-           gender:selected('genderChips')[0]||'', cond:selected('condChips'), hist:selected('histChips') };
+           birth:document.getElementById('birth').value, gender:selected('genderChips')[0]||'',
+           cond:selected('condChips'), hist:selected('histChips') };
 }
 function applyForm(p){
   document.getElementById('age').value=p.age;
+  document.getElementById('birth').value=p.birth||'';
   const us=document.querySelector('#unitChips .chip[data-v="'+(p.unit||'year')+'"]'); if(us) segToggle(us,'unitChips');
   document.querySelectorAll('#genderChips .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
   if(p.gender) setSeg(p.gender);
@@ -558,6 +593,104 @@ function delProfile(id){
   storeProfiles(loadProfiles().filter(x=>x.id!==id)); renderProfiles();
 }
 renderProfiles();
+
+/* ---------- 접종 페이스메이커: 일정 계산 · 타임라인 · .ics · 앱 알림 ---------- */
+let currentPace=[];
+function getBirth(){ const v=document.getElementById('birth').value; if(!v) return null;
+  const p=v.split('-').map(Number); if(!p[0]) return null; return new Date(p[0],(p[1]||1)-1,1); }
+function addYears(d,n){ return new Date(d.getFullYear()+n, d.getMonth(), d.getDate()); }
+function addMonths(d,n){ return new Date(d.getFullYear(), d.getMonth()+n, d.getDate()); }
+function milestoneDate(birth, ageM, targetY){
+  if(birth){ const d=new Date(birth.getFullYear()+targetY, birth.getMonth(), 1); if(d>new Date()) return d; }
+  return addYears(new Date(), Math.max(0, targetY - Math.floor(ageM/12)));
+}
+function paceFor(v, status, m, cond, birth){
+  const T=new Date(), out=[], base={nm:v.name, disease:v.disease};
+  const push=(label,date,sub)=> out.push(Object.assign({},base,{label,date,sub}));
+  if(v.id==='flu'){ const mo=T.getMonth(); push('접종', (mo>=9||mo<=1)?T:new Date(T.getFullYear(),9,1), '매년 독감 시즌'); }
+  else if(v.id==='ppsv'){ status==='now' ? push('1회 접종',T,'지금') : push('접종', milestoneDate(birth,m,65), '만 65세 도래'); }
+  else if(v.id==='hepa'){ if(status==='now'){ push('1차',T,'지금'); push('2차', addMonths(T,6), '1차 +6개월'); } else push('접종',T,'지금'); }
+  else if(v.id==='hzv'){ if(status==='now'){ push('1차',T,'지금'); push('2차', addMonths(T,2), '1차 +2~6개월'); } else push('접종', milestoneDate(birth,m,50), '만 50세'); }
+  else if(v.id==='tdap'){ status==='now' ? push('접종·확인',T,'10년마다') : push('접종', milestoneDate(birth,m,11), '만 11세'); }
+  else if(v.id==='cov'){ push('절기 접종',T,'절기 대상'); }
+  else { status==='now' ? push('접종',T,'지금') : push('접종', addYears(T,1), '해당 시기'); }
+  return out;
+}
+function whenLabel(date){
+  const T=new Date(), days=Math.round((date - T)/86400000);
+  if(days<=0) return {big:'지금', small:'바로', soon:false};
+  const y=date.getFullYear(), mo=date.getMonth()+1;
+  if(days<=45) return {big:mo+'월', small:'곧', soon:true};
+  if(y===T.getFullYear()) return {big:y+'년 '+mo+'월', small:'올해', soon:true};
+  return {big:y+'년', small:mo+'월경', soon:false};
+}
+function renderPace(groups, m, cond, birth){
+  const box=document.getElementById('paceBox'); const es=[];
+  groups.now.forEach(x=> paceFor(x.v,'now',m,cond,birth).forEach(e=>es.push(e)));
+  groups.later.forEach(x=> paceFor(x.v,'later',m,cond,birth).forEach(e=>es.push(e)));
+  if(!es.length){ box.innerHTML=''; currentPace=[]; return; }
+  es.sort((a,b)=> a.date - b.date); currentPace=es;
+  const rows=es.map((e,i)=>{ const w=whenLabel(e.date);
+    return `<div class="pace-item${w.soon?' soon':''}">
+      <span class="pace-node"></span>
+      <div class="pace-when">${w.big}<small>${e.sub||w.small}</small></div>
+      <div class="pace-name">${e.nm}${(e.label&&e.label!=='접종')?' · '+e.label:''}<small>${e.disease||''}</small></div>
+      <button class="pace-add" onclick="addOne(${i})">＋ 캘린더</button>
+    </div>`; }).join('');
+  box.innerHTML=`<div class="pace">
+    <div class="pace-h">📅 접종 페이스메이커</div>
+    <div class="pace-sub">나이·조건에 맞춰 ‘언제 뭘 맞아야 하는지’ 순서대로. 캘린더에 넣으면 접종일에 알림이 와요.</div>
+    <div class="pace-list">${rows}</div>
+    <div class="pace-actions">
+      <button class="btn btn-bell" onclick="enableReminders()">🔔 앱 알림 켜기</button>
+      <button class="btn btn-cal" onclick="addAll()">📅 전체 캘린더에 추가</button>
+    </div></div>`;
+}
+/* .ics 생성 (기기 캘린더가 실제 알림 발송) */
+function pad(n){ return String(n).padStart(2,'0'); }
+function icsDay(d){ return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate()); }
+function buildEvent(e){
+  const ds=icsDay(e.date);
+  const uid='vc-'+e.date.getTime()+'-'+Math.floor(Math.random()*1e6)+'@baekjin-chaenggyeo';
+  return ['BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+icsDay(new Date())+'T090000',
+    'DTSTART:'+ds+'T090000','DTEND:'+ds+'T093000',
+    'SUMMARY:💉 백신 챙겨 — '+e.nm+((e.label&&e.label!=='접종')?' '+e.label:''),
+    'DESCRIPTION:'+e.nm+' ('+(e.disease||'')+') '+(e.sub||'')+'. 접종기관 찾기: https\\://nip.kdca.go.kr',
+    'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY','DESCRIPTION:내일 '+e.nm+' 접종 예정','END:VALARM',
+    'END:VEVENT'].join('\r\n');
+}
+function downloadICS(name, body){
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//baekjin-chaenggyeo//KO','CALSCALE:GREGORIAN',body,'END:VCALENDAR'].join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'}));
+  a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+}
+function addOne(i){ const e=currentPace[i]; if(e) downloadICS('vaccine-'+(i+1)+'.ics', buildEvent(e)); }
+function addAll(){ if(currentPace.length) downloadICS('vaccine-schedule.ics', currentPace.map(buildEvent).join('\r\n')); }
+/* 앱 내 알림 (예정일에 앱 열면 알림) — 진짜 백그라운드 푸시는 서버 필요, 2단계 */
+function enableReminders(){
+  if(!('Notification' in window)){ alert('이 브라우저는 알림을 지원하지 않아요. ‘전체 캘린더에 추가’를 이용하세요.'); return; }
+  Notification.requestPermission().then(p=>{
+    if(p!=='granted'){ alert('알림 권한이 필요해요. 대신 캘린더 추가를 이용할 수 있어요.'); return; }
+    localStorage.setItem('vc_reminders', JSON.stringify(currentPace.map(e=>({nm:e.nm,date:e.date.getTime()}))));
+    checkReminders();
+    alert('알림을 켰어요. 접종 예정일이 되면 앱을 열 때 알려드려요.\n(앱을 안 켜도 오는 백그라운드 푸시는 다음 단계)');
+  });
+}
+function checkReminders(){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  let list=[], done=[];
+  try{ list=JSON.parse(localStorage.getItem('vc_reminders'))||[]; }catch(e){}
+  try{ done=JSON.parse(localStorage.getItem('vc_notified'))||[]; }catch(e){}
+  const now=Date.now();
+  list.forEach(r=>{ const key=r.nm+'@'+r.date;
+    if(r.date<=now && done.indexOf(key)<0){
+      try{ new Notification('백신 챙겨 · 접종할 때예요', {body:r.nm+' — 예정일이에요. 가까운 접종기관을 확인하세요.', icon:'icon.svg'}); }catch(e){}
+      done.push(key);
+    }
+  });
+  localStorage.setItem('vc_notified', JSON.stringify(done));
+}
+checkReminders();
 
 /* ---------- PWA: 오프라인·설치 (정적 앱) ---------- */
 if('serviceWorker' in navigator){
