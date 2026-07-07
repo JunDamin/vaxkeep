@@ -663,22 +663,30 @@ function activeAlerts(){
 function getTravel(){ const v=document.getElementById('travel').value; if(!v) return null; const d=new Date(v); return isNaN(d)?null:d; }
 function getRegion(){ return document.getElementById('travelRegion').value; }
 function fmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
-/* 여행 백신: lead=출발 전 접종 권장 일수, required=입국요건(필수). ⚠️ 검증 중(질병청 해외여행질병정보) */
+/* 여행 백신: lead=출발 전 접종 권장 일수. 근거: 질병청 해외감염병NOW·국립검역소·CDC(2026-07) */
 const TVAX={
-  hepa:{name:'A형간염', lead:14, note:'개도국 여행 시 광범위 권장'},
+  hepa:{name:'A형간염', lead:14, note:'개도국 여행 시 광범위 권장(1차 후 2~4주 항체)'},
   typhoid:{name:'장티푸스', lead:14, note:'오염 음식·물 위험 지역'},
-  je:{name:'일본뇌염', lead:14, note:'아시아 농촌·장기 체류'},
-  yf:{name:'황열', lead:10, required:true, note:'접종증명서 입국요건 국가 있음(최소 10일 전 접종)'},
-  meningo:{name:'수막구균', lead:14, note:'수막염 벨트·사우디 성지순례(입국요건)'},
-  rabies:{name:'광견병', lead:21, note:'장기·오지 체류, 동물 접촉 위험'},
-  tdap:{name:'파상풍(Td/Tdap)', lead:14, note:'모든 여행자 기본 최신화'},
-  flu:{name:'인플루엔자', lead:14, note:'단체·연중 유행 지역'}
+  je:{name:'일본뇌염', lead:42, note:'아시아 농촌·장기 체류 (2회, 4~6주 전 시작)'},
+  yf:{name:'황열', lead:10, note:'접종증명서(ICVP) 접종 10일 후부터 유효·평생. 발생국 입국요건'},
+  meningo:{name:'수막구균(MenACWY)', lead:10, note:'사우디 성지순례(하지·움라) 비자·입국 요건'},
+  rabies:{name:'광견병', lead:28, note:'장기·오지 체류, 동물 접촉 위험 (3회, 3~4주 전)'},
+  hepb:{name:'B형간염', lead:42, note:'장기 시리즈(0·1·6개월) 조기 시작 권장'},
+  mmr:{name:'MMR(홍역)', lead:14, note:'홍역 유행 대비 기본접종 최신화'},
+  tdap:{name:'파상풍(Td/Tdap)', lead:14, note:'모든 여행자 기본 최신화(4~6주 전 상담)'},
+  flu:{name:'인플루엔자', lead:14, note:'접종 2주 후 방어항체·단체여행 권장'}
 };
 const REGION_VAX={
-  sea:['hepa','typhoid','je','tdap'], sasia:['hepa','typhoid','je','rabies','tdap'],
-  ssafrica:['yf','hepa','typhoid','meningo','tdap'], latam:['yf','hepa','typhoid','tdap'],
-  mideast:['hepa','typhoid','meningo','tdap'], eastasia:['hepa','tdap','flu'], westdev:['tdap','flu']
+  sea:['hepa','typhoid','je','hepb','tdap','flu'],
+  sasia:['hepa','typhoid','je','rabies','hepb','tdap','flu'],
+  ssafrica:['yf','hepa','typhoid','meningo','rabies','hepb','tdap','flu'],
+  latam:['yf','hepa','typhoid','rabies','hepb','tdap','flu'],
+  mideast:['meningo','hepa','typhoid','hepb','tdap','flu'],
+  eastasia:['hepa','hepb','tdap','flu'],
+  westdev:['tdap','mmr','flu']
 };
+/* 입국요건(필수) — 권역별로 다름: 황열=아프리카·중남미, 수막구균=중동(성지순례) */
+const REGION_REQ={ ssafrica:['yf'], latam:['yf'], mideast:['meningo'] };
 function renderTravel(groups){
   const box=document.getElementById('travelBox'), tv=getTravel(), region=getRegion();
   if(!tv && !region){ box.innerHTML=''; return; }
@@ -691,7 +699,8 @@ function renderTravel(groups){
   let rows='';
   if(region && REGION_VAX[region]){
     rows = REGION_VAX[region].map(k=>{ const t=TVAX[k]; const d=deadline(t.lead);
-      const tag = t.required? ' <span class="badge alert">입국요건</span>':'';
+      const req = (REGION_REQ[region]||[]).indexOf(k)>=0;
+      const tag = req? ' <span class="badge alert">입국요건</span>':'';
       return `<div class="tv-item ${d.cls}"><div class="tv-name">${t.name}${tag}<small>${t.note}</small></div><div class="tv-stat">${d.stat}</div></div>`;
     }).join('');
   } else if(tv){
@@ -706,7 +715,7 @@ function renderTravel(groups){
      <div class="pace-h">✈️ 여행 전 준비 <span style="font-weight:600;color:var(--muted);font-size:13px">${tv?(dday>=0?'D-'+dday:'출발 지남'):''}</span></div>
      <div class="pace-sub">${sub}</div>
      ${rows||'<div class="pace-sub">해당 권장 접종이 없어요.</div>'}
-     <div class="pace-sub" style="margin-top:12px">※ 국가별 최종 필수 여부·말라리아 예방약 등은 <a href="https://www.kdca.go.kr" target="_blank" rel="noopener" style="color:#26456f;font-weight:700">질병청 해외여행질병정보</a>에서 확인하세요.</div>
+     <div class="pace-sub" style="margin-top:12px">※ 황열 요구국은 수시 변동돼요. 국가별 최종 필수 여부·말라리아 예방약 등은 <a href="https://www.kdca.go.kr/contents.es?mid=a20102050000" target="_blank" rel="noopener" style="color:#26456f;font-weight:700">질병청 해외감염병NOW</a>에서 확인하세요.</div>
    </div>`;
 }
 
