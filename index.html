@@ -143,6 +143,12 @@
   .pf .pf-del:hover{background:var(--done-soft);color:var(--ink)}
   .btn-save{background:var(--surface);color:var(--now);border:1px solid var(--now-soft);margin-top:12px}
   .btn-save:hover{box-shadow:0 6px 18px rgba(18,133,106,.14)}
+  .more{margin-top:20px;border-top:1px solid var(--line)}
+  .more>summary{cursor:pointer;list-style:none;font-weight:700;font-size:15px;color:var(--now);padding:16px 0 4px;display:flex;align-items:center;gap:8px}
+  .more>summary::-webkit-details-marker{display:none}
+  .more>summary::before{content:'＋';font-weight:800}
+  .more[open]>summary::before{content:'－'}
+  .more[open]>summary{margin-bottom:10px}
 
   .result-eyebrow{color:var(--now);font-weight:700;font-size:14px;margin-bottom:8px}
   .result-hero h2{font-size:clamp(26px,6.4vw,36px);font-weight:800;letter-spacing:-.03em;line-height:1.2}
@@ -208,7 +214,7 @@
   <div class="wrap">
     <button class="back" onclick="go('home')">← 처음으로</button>
     <h2 class="step-title">누구의 백신을 볼까요?</h2>
-    <p class="step-sub">저장된 프로필은 <b>이 기기에만</b> 보관돼요(서버 전송 없음).</p>
+    <p class="step-sub"><b>나이만 넣으면 바로</b> 결과가 나와요. 더 정확히 하고 싶으면 아래에서 조건을 추가하세요.</p>
 
     <div class="profiles field" id="profiles" style="display:none">
       <div class="label">우리 가족 <span class="opt">눌러서 불러오기</span></div>
@@ -226,10 +232,10 @@
       </div>
     </div>
 
-    <div class="divider">직접 입력해도 좋아요</div>
+    <div class="divider">또는 직접</div>
 
     <div class="field">
-      <div class="label">나이</div>
+      <div class="label">나이 <span class="opt">이것만 넣어도 결과가 나와요</span></div>
       <div class="age-wrap">
         <div class="age-row"><input id="age" type="number" inputmode="numeric" min="0" max="120" placeholder="00" /></div>
         <div class="chips" id="unitChips">
@@ -239,8 +245,13 @@
       </div>
     </div>
 
+    <button class="btn btn-primary btn-block" onclick="showResult()">지금 챙길 백신 보기 →</button>
+
+    <details class="more">
+      <summary>더 정확하게 — 성별·기저질환·접종이력·여행 <span class="opt">선택</span></summary>
+
     <div class="field">
-      <div class="label">생년월 <span class="opt">선택 · 정확한 접종일 계산</span></div>
+      <div class="label">생년월 <span class="opt">정확한 접종일 계산</span></div>
       <input class="birth" id="birth" type="month" max="2026-12" />
     </div>
 
@@ -294,7 +305,8 @@
       </div>
     </div>
 
-    <button class="btn btn-primary btn-block" onclick="showResult()">지금 챙길 백신 보기</button>
+    </details>
+
     <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 이 정보를 가족 프로필로 저장</button>
     <div style="height:24px"></div>
   </div>
