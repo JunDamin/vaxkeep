@@ -107,6 +107,19 @@
   .pace-actions .btn{padding:12px 16px;font-size:14px;flex:1;min-width:150px}
   .btn-bell{background:var(--now)} .btn-cal{background:#fff;color:var(--now);border:1px solid var(--now)}
 
+  .badge.alert{background:#FBE9E4;color:#B23B1E}
+  .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
+  .alert-idle{margin-top:14px;color:var(--muted);font-size:12.5px}
+  .travel{margin-top:36px;background:#EEF3FB;border:1px solid #d3e0f2;border-radius:var(--radius);padding:20px}
+  .travel .pace-h{color:#26456f}
+  .tv-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #dbe6f5}
+  .tv-item:first-of-type{border-top:none}
+  .tv-name{flex:1;font-weight:700;font-size:15px}
+  .tv-name small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+  .tv-stat{flex:0 0 auto;font-weight:800;font-size:12.5px;padding:6px 10px;border-radius:8px;text-align:center}
+  .tv-item.ok .tv-stat{background:var(--now-soft);color:var(--now)}
+  .tv-item.warn .tv-stat{background:#FBE9E4;color:#B23B1E}
+
   .chips{display:flex;flex-wrap:wrap;gap:10px}
   .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;
     padding:11px 17px;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;transition:all .16s;user-select:none}
@@ -229,6 +242,11 @@
     </div>
 
     <div class="field">
+      <div class="label">여행 출발일 <span class="opt">선택 · 여행 전 접종 시점 계산</span></div>
+      <input class="birth" id="travel" type="date" min="2026-01-01" />
+    </div>
+
+    <div class="field">
       <div class="label">성별</div>
       <div class="chips" id="genderChips">
         <button class="chip seg" data-v="여" aria-pressed="false" onclick="segToggle(this,'genderChips')">여성</button>
@@ -278,7 +296,9 @@
       <h2 id="resultHead">—</h2>
       <p class="prof" id="resultProf"></p>
     </div>
+    <div id="alertBanner"></div>
     <div id="resultBody"></div>
+    <div id="travelBox"></div>
     <div id="paceBox"></div>
 
     <div class="disclaimer">
@@ -503,12 +523,20 @@ function showResult(){
     groups[st].push({v, free: typeof v.free==='function' ? v.free(m,cond) : false, m, cond});
   });
 
+  curAlerts = activeAlerts();
+  groups.now.sort((x,y)=> (curAlerts[y.v.id]?1:0) - (curAlerts[x.v.id]?1:0));
+
   const n = groups.now.length;
   const head = document.getElementById('resultHead');
   head.innerHTML = n>0 ? `지금 <em>${n}가지</em>를 챙길 때예요` : `지금 새로 챙길 백신은 없어요 👍`;
   const prof = [ageLabel(m), gender==='여'?'여성':gender==='남'?'남성':null,
     [...cond].filter(x=>x!=='없음').join('·')||'특이사항 없음'].filter(Boolean).join(' · ');
   document.getElementById('resultProf').textContent = prof;
+
+  const ab=document.getElementById('alertBanner'), ak=Object.keys(curAlerts);
+  ab.innerHTML = ak.length
+    ? `<div class="alert-banner">🔥 지금 <b>${curAlerts[ak[0]].label}</b> — 관련 백신 접종을 우선하세요.</div>`
+    : `<div class="alert-idle">🛡️ 현재 특별한 유행 경보 없음 · 독감 유행 시즌(10~2월)엔 자동으로 우선순위를 올려요.</div>`;
 
   const body = document.getElementById('resultBody');
   body.innerHTML = renderGroup('지금 챙기세요','var(--now)','now',groups.now,m,cond)
@@ -517,6 +545,7 @@ function showResult(){
   if(n===0 && groups.later.length===0){
     body.innerHTML += `<div class="empty" style="margin-top:14px">현재 조건에서 새로 권장되는 접종이 없어요. 독감 시즌(매년 10~11월)은 잊지 마세요!</div>`;
   }
+  renderTravel(groups);
   renderPace(groups, m, cond, birth);
   go('result');
 }
@@ -527,16 +556,19 @@ function renderGroup(title,color,cls,items,m,cond){
     const why  = typeof v.why==='function' ? v.why(m,cond) : v.why;
     const badge = cls==='done' ? '<span class="badge paid">✔ 완료</span>'
       : free ? '<span class="badge free">무료</span>' : '<span class="badge paid">비급여</span>';
+    const alertB = curAlerts[v.id] ? '<span class="badge alert">🔥 유행</span>' : '';
+    const mo = metaOf(v.id);
+    const onsetM = (cls!=='done' && mo.onset) ? `<span class="vx-when">💉 접종 후 약 ${mo.onset}주 뒤 효과</span>` : '';
     const link = cls==='done' ? '' :
       `<a class="vx-link" href="${v.where}" target="_blank" rel="noopener">가까운 접종기관 찾기 ↗</a>`;
     return `<div class="card ${cls}">
       <div class="card-top">
         <span class="vx-icon">${v.icon}</span>
         <span class="vx-name">${v.name}<small>${v.disease}</small></span>
-        ${badge}
+        ${alertB}${badge}
       </div>
       <p class="vx-why">${why}</p>
-      <div class="vx-meta"><span class="vx-when">🗓 ${when}</span>${link}</div>
+      <div class="vx-meta"><span class="vx-when">🗓 ${when}</span>${onsetM}${link}</div>
     </div>`;
   }).join('');
   return `<div class="group">
@@ -553,12 +585,13 @@ function loadProfiles(){ try{ return JSON.parse(localStorage.getItem(PKEY))||[];
 function storeProfiles(a){ try{ localStorage.setItem(PKEY, JSON.stringify(a)); }catch(e){} }
 function readForm(){
   return { age:document.getElementById('age').value, unit:selected('unitChips')[0]||'year',
-           birth:document.getElementById('birth').value, gender:selected('genderChips')[0]||'',
-           cond:selected('condChips'), hist:selected('histChips') };
+           birth:document.getElementById('birth').value, travel:document.getElementById('travel').value,
+           gender:selected('genderChips')[0]||'', cond:selected('condChips'), hist:selected('histChips') };
 }
 function applyForm(p){
   document.getElementById('age').value=p.age;
   document.getElementById('birth').value=p.birth||'';
+  document.getElementById('travel').value=p.travel||'';
   const us=document.querySelector('#unitChips .chip[data-v="'+(p.unit||'year')+'"]'); if(us) segToggle(us,'unitChips');
   document.querySelectorAll('#genderChips .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
   if(p.gender) setSeg(p.gender);
@@ -596,6 +629,51 @@ renderProfiles();
 
 /* ---------- 접종 페이스메이커: 일정 계산 · 타임라인 · .ics · 앱 알림 ---------- */
 let currentPace=[];
+let curAlerts={};
+
+/* 백신별 부가 정보: onset=효과 발현까지 주(週), travel=여행 관련, series=다회 접종 메모 */
+const VMETA={
+  flu:{onset:2,travel:true}, hepa:{onset:2,travel:true,series:'1차 후 약 2주면 상당 부분 예방·6개월 뒤 2차로 완성'},
+  tdap:{onset:2,travel:true}, mmr:{onset:2,travel:true}, hepb:{onset:4,travel:true,series:'3회(0·1·6개월) 완료까지 시간 필요'},
+  je:{onset:4,travel:true,series:'다회 접종'}, ppsv:{onset:3}, pcv:{onset:2}, hzv:{onset:4,series:'2차까지 완료 시 최대 효과'},
+  var:{onset:2}, cov:{onset:2}, hpv:{onset:4}, bcg:{onset:6}, dtap:{onset:2}, ipv:{onset:2}, hib:{onset:2}, rota:{onset:2}
+};
+function metaOf(id){ return VMETA[id]||{}; }
+
+/* 유행/시즌 경보 — 현재는 시즌 규칙(독감 10~2월). 실시간 감염병 표본감시 API 연동은 2단계 */
+function activeAlerts(){
+  const a={}, mo=new Date().getMonth();
+  if(mo>=9 || mo<=1) a['flu']={label:'인플루엔자 유행 시즌'};
+  return a;
+}
+
+/* 여행 모드 */
+function getTravel(){ const v=document.getElementById('travel').value; if(!v) return null; const d=new Date(v); return isNaN(d)?null:d; }
+function fmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
+function renderTravel(groups){
+  const box=document.getElementById('travelBox'), tv=getTravel();
+  if(!tv){ box.innerHTML=''; return; }
+  const T=new Date(), dday=Math.ceil((tv - T)/86400000), items=[];
+  [...groups.now, ...groups.later].forEach(x=>{ const mo=metaOf(x.v.id); if(!mo.travel) return;
+    const startBy=new Date(tv.getTime() - (mo.onset||2)*7*86400000);
+    let stat, cls;
+    if(T<=startBy){ stat='여유 · '+fmtDate(startBy)+'까지 접종'; cls='ok'; }
+    else if(T<tv){ stat='촉박 · 지금 바로'; cls='warn'; }
+    else { stat='출발일 지남'; cls='warn'; }
+    items.push({nm:x.v.name, onset:mo.onset||2, series:mo.series, stat, cls});
+  });
+  if(!items.length){ box.innerHTML=`<div class="travel"><div class="pace-h">✈️ 여행 전 준비</div><div class="pace-sub">이 프로필에 여행 관련 권장 접종이 없어요. 여행지(국가)별 필수 백신은 별도 확인이 필요해요.</div></div>`; return; }
+  const rows=items.map(it=>`<div class="tv-item ${it.cls}">
+     <div class="tv-name">${it.nm}<small>접종 후 약 ${it.onset}주 뒤 효과${it.series?' · '+it.series:''}</small></div>
+     <div class="tv-stat">${it.stat}</div></div>`).join('');
+  box.innerHTML=`<div class="travel">
+     <div class="pace-h">✈️ 여행 전 준비 <span style="font-weight:600;color:var(--muted);font-size:13px">${dday>=0?'D-'+dday:'출발 지남'}</span></div>
+     <div class="pace-sub">백신은 효과가 나타나기까지 시간이 걸려요. 출발 전 완료하려면 아래 시점까지 접종하세요.</div>
+     ${rows}
+     <div class="pace-sub" style="margin-top:12px">※ 국가·지역별 필수 백신(황열·장티푸스·말라리아 등)은 여행지 기준 별도 확인이 필요해요(지역 연동은 2단계).</div>
+   </div>`;
+}
+
 function getBirth(){ const v=document.getElementById('birth').value; if(!v) return null;
   const p=v.split('-').map(Number); if(!p[0]) return null; return new Date(p[0],(p[1]||1)-1,1); }
 function addYears(d,n){ return new Date(d.getFullYear()+n, d.getMonth(), d.getDate()); }
