@@ -110,6 +110,22 @@
   .ai-box{margin-top:14px;background:var(--now-soft);border:1px solid #cfe4da;border-radius:var(--radius);padding:18px;font-size:14.5px;color:#22453b;line-height:1.75}
   .ai-note{margin-top:14px;color:var(--muted);font-size:13px;background:#F3F0EA;border:1px solid var(--line);border-radius:12px;padding:14px}
 
+  .summary-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 22px}
+  .sum-chip{border:1px solid var(--now);background:var(--now-soft);color:var(--now);border-radius:999px;padding:8px 13px;font-family:inherit;font-weight:700;font-size:13.5px;cursor:pointer}
+  .sum-chip span{opacity:.65;margin-left:2px}
+  #resultArea{margin-bottom:26px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-top:8px}
+  .step-q{font-size:clamp(19px,5.2vw,23px);font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+  .step-hint{color:var(--muted);font-size:13.5px;margin-bottom:16px}
+  .step-nav{display:flex;align-items:center;gap:10px;margin-top:20px}
+  .btn-skip{background:none;border:none;color:var(--muted);font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;padding:12px}
+  .accuracy{margin:4px 0 14px}
+  .acc-bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+  .acc-bar>div{height:100%;background:var(--now);border-radius:99px;transition:width .3s}
+  .acc-msg{color:var(--muted);font-size:12.5px;margin-top:7px}
+  .extra-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .extra-row .btn{flex:1;min-width:150px;margin-top:0}
+
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
   .alert-idle{margin-top:14px;color:var(--muted);font-size:12.5px}
@@ -199,7 +215,7 @@
     <h1>어린이는 챙기는데,<br /><span class="fade">어른은 누가 챙기죠?</span></h1>
     <p class="lede">흩어진 <b>성인 예방접종 지침</b>을 당신의 상황 하나로 정리해 ‘지금 챙길 백신’만. 아이 접종은 <b>가족 프로필</b>로 함께 관리하세요.</p>
     <div class="cta-row">
-      <button class="btn btn-primary" onclick="go('input')">내 백신 확인하기 →</button>
+      <button class="btn btn-primary" onclick="startApp()">내 백신 확인하기 →</button>
     </div>
     <div class="home-meta">
       <div><b>성인 중심</b> · 온 가족</div>
@@ -210,134 +226,128 @@
 </section>
 
 <!-- ===== INPUT ===== -->
-<section id="input" class="screen">
+<section id="app" class="screen">
   <div class="wrap">
     <button class="back" onclick="go('home')">← 처음으로</button>
-    <h2 class="step-title">누구의 백신을 볼까요?</h2>
-    <p class="step-sub"><b>나이만 넣으면 바로</b> 결과가 나와요. 더 정확히 하고 싶으면 아래에서 조건을 추가하세요.</p>
 
-    <div class="profiles field" id="profiles" style="display:none">
+    <div class="profiles" id="profiles" style="display:none">
       <div class="label">우리 가족 <span class="opt">눌러서 불러오기</span></div>
       <div class="pf-bar" id="pfBar"></div>
     </div>
 
-    <div class="field">
-      <div class="label">한 문장으로 적어도 돼요 <span class="opt">선택 · 자동으로 채워드려요</span></div>
-      <div class="nl">
-        <textarea id="nlText" placeholder="예: 생후 4개월 아기 / 63세 당뇨, 대상포진 안 맞음"></textarea>
-        <div class="nl-bar">
-          <span class="nl-hint" id="nlHint">문장을 읽어 나이·상태·접종이력을 채웁니다</span>
-          <button class="nl-fill" onclick="autofill()">✦ 자동 채우기</button>
+    <div class="summary-chips" id="summaryBar" style="display:none"></div>
+
+    <!-- 결과: 항상 위, 나이 입력 후 표시 -->
+    <div id="resultArea" style="display:none">
+      <div class="result-hero">
+        <p class="result-eyebrow">이 사람을 위한 결정</p>
+        <h2 id="resultHead">—</h2>
+        <p class="prof" id="resultProf"></p>
+      </div>
+      <div id="alertBanner"></div>
+      <div id="resultBody"></div>
+      <div id="travelBox"></div>
+      <div id="paceBox"></div>
+      <button class="btn btn-save btn-block explain-btn" onclick="explain()">✨ 쉬운 말로 설명 듣기 (AI)</button>
+      <div id="aiExplain"></div>
+      <div class="disclaimer">
+        <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
+        <b>비진단 참고 도구</b>예요(2025–2026 기준). 정확한 차수·간격·무료 대상은 연도·지자체에 따라 다를 수 있어
+        반드시 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a> 표준일정표와 관할 보건소·의료진을 통해 확인하세요.
+        질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>.
+      </div>
+    </div>
+
+    <!-- 질문: 한 번에 하나 -->
+    <div id="questionArea">
+      <div class="accuracy" id="accuracy"></div>
+
+      <div class="step" data-step="age">
+        <div class="step-q">나이가 어떻게 되세요?</div>
+        <div class="step-hint">이것만 넣어도 바로 결과가 나와요.</div>
+        <div class="age-wrap">
+          <div class="age-row"><input id="age" type="number" inputmode="numeric" min="0" max="120" placeholder="00" oninput="liveUpdate()" /></div>
+          <div class="chips" id="unitChips">
+            <button class="chip seg" data-v="year" aria-pressed="true" onclick="segToggle(this,'unitChips');liveUpdate()">세</button>
+            <button class="chip seg" data-v="month" aria-pressed="false" onclick="segToggle(this,'unitChips');liveUpdate()">개월</button>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <div class="divider">또는 직접</div>
-
-    <div class="field">
-      <div class="label">나이 <span class="opt">이것만 넣어도 결과가 나와요</span></div>
-      <div class="age-wrap">
-        <div class="age-row"><input id="age" type="number" inputmode="numeric" min="0" max="120" placeholder="00" /></div>
-        <div class="chips" id="unitChips">
-          <button class="chip seg" data-v="year" aria-pressed="true" onclick="segToggle(this,'unitChips')">세</button>
-          <button class="chip seg" data-v="month" aria-pressed="false" onclick="segToggle(this,'unitChips')">개월</button>
+        <input class="birth" id="birth" type="month" max="2026-12" style="margin-top:10px" onchange="liveUpdate()" placeholder="생년월(선택)" />
+        <div class="nl">
+          <textarea id="nlText" placeholder="예: 63세 당뇨, 대상포진 안 맞음"></textarea>
+          <div class="nl-bar">
+            <span class="nl-hint" id="nlHint">한 문장으로 적으면 자동으로 채워요 (선택)</span>
+            <button class="nl-fill" onclick="autofill()">✦ 자동 채우기</button>
+          </div>
         </div>
+        <div class="step-nav"><button class="btn btn-primary" onclick="advance()">결과 보기 →</button></div>
+      </div>
+
+      <div class="step" data-step="gender">
+        <div class="step-q">성별이 어떻게 되세요?</div>
+        <div class="chips" id="genderChips">
+          <button class="chip seg" data-v="여" aria-pressed="false" onclick="segToggle(this,'genderChips');liveUpdate()">여성</button>
+          <button class="chip seg" data-v="남" aria-pressed="false" onclick="segToggle(this,'genderChips');liveUpdate()">남성</button>
+        </div>
+        <div class="step-nav"><button class="btn btn-primary" onclick="advance()">다음 →</button><button class="btn-skip" onclick="skipStep()">건너뛰기</button></div>
+      </div>
+
+      <div class="step" data-step="cond">
+        <div class="step-q">기저질환이나 상태가 있으세요?</div>
+        <div class="step-hint">해당되는 것 모두</div>
+        <div class="chips" id="condChips">
+          <button class="chip" data-v="만성질환" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">만성질환(당뇨·심폐)</button>
+          <button class="chip" data-v="간질환" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">간질환</button>
+          <button class="chip" data-v="면역저하" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">면역저하·무비장</button>
+          <button class="chip" data-v="임신" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">임신 중</button>
+          <button class="chip" data-v="없음" aria-pressed="false" onclick="noneToggle(this,'condChips');liveUpdate()">없음</button>
+        </div>
+        <div class="step-nav"><button class="btn btn-primary" onclick="advance()">다음 →</button><button class="btn-skip" onclick="skipStep()">건너뛰기</button></div>
+      </div>
+
+      <div class="step" data-step="hist">
+        <div class="step-q">이미 맞은 백신이 있나요?</div>
+        <div class="step-hint">아는 것만</div>
+        <div class="chips" id="histChips">
+          <button class="chip" data-v="독감" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">독감(올해)</button>
+          <button class="chip" data-v="폐렴구균" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">폐렴구균</button>
+          <button class="chip" data-v="대상포진" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">대상포진</button>
+          <button class="chip" data-v="Tdap" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">파상풍(Tdap)</button>
+          <button class="chip" data-v="MMR" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">MMR</button>
+          <button class="chip" data-v="수두" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">수두</button>
+          <button class="chip" data-v="A형간염" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">A형간염</button>
+          <button class="chip" data-v="B형간염" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">B형간염</button>
+          <button class="chip" data-v="HPV" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">HPV</button>
+          <button class="chip" data-v="코로나19" aria-pressed="false" onclick="multiToggle(this);liveUpdate()">코로나19</button>
+        </div>
+        <div class="step-nav"><button class="btn btn-primary" onclick="advance()">다음 →</button><button class="btn-skip" onclick="skipStep()">건너뛰기</button></div>
+      </div>
+
+      <div class="step" data-step="travel">
+        <div class="step-q">✈️ 여행 계획이 있으세요?</div>
+        <div class="step-hint">출발일·여행지로 필요한 접종을 계산해요</div>
+        <input class="birth" id="travel" type="date" min="2026-01-01" onchange="liveUpdate()" />
+        <select class="birth" id="travelRegion" style="display:block;margin-top:10px" onchange="liveUpdate()">
+          <option value="">여행지 선택</option>
+          <option value="sea">동남아시아 (태국·베트남 등)</option>
+          <option value="sasia">남아시아 (인도 등)</option>
+          <option value="ssafrica">아프리카 (사하라 이남)</option>
+          <option value="latam">중남미</option>
+          <option value="mideast">중동 (성지순례 등)</option>
+          <option value="eastasia">동아시아 (중국·일본 등)</option>
+          <option value="westdev">북미·서유럽·오세아니아</option>
+        </select>
+        <div class="step-nav"><button class="btn btn-primary" onclick="advance()">완료</button><button class="btn-skip" onclick="skipStep()">여행 없음</button></div>
       </div>
     </div>
 
-    <button class="btn btn-primary btn-block" onclick="showResult()">지금 챙길 백신 보기 →</button>
-
-    <details class="more">
-      <summary>더 정확하게 — 성별·기저질환·접종이력·여행 <span class="opt">선택</span></summary>
-
-    <div class="field">
-      <div class="label">생년월 <span class="opt">정확한 접종일 계산</span></div>
-      <input class="birth" id="birth" type="month" max="2026-12" />
+    <div class="extra-row" id="extraRow" style="display:none">
+      <button class="btn btn-save" onclick="addTravel()">✈️ 여행 계획 추가</button>
+      <button class="btn btn-cal" onclick="scrollTopResult()">✓ 완료 · 결과 보기</button>
     </div>
 
-    <div class="field">
-      <div class="label">여행 준비 <span class="opt">선택 · 출발일·여행지로 필요한 접종 계산</span></div>
-      <input class="birth" id="travel" type="date" min="2026-01-01" />
-      <select class="birth" id="travelRegion" style="display:block;margin-top:10px">
-        <option value="">여행지 선택 (선택)</option>
-        <option value="sea">동남아시아 (태국·베트남 등)</option>
-        <option value="sasia">남아시아 (인도 등)</option>
-        <option value="ssafrica">아프리카 (사하라 이남)</option>
-        <option value="latam">중남미</option>
-        <option value="mideast">중동 (성지순례 등)</option>
-        <option value="eastasia">동아시아 (중국·일본 등)</option>
-        <option value="westdev">북미·서유럽·오세아니아</option>
-      </select>
-    </div>
-
-    <div class="field">
-      <div class="label">성별</div>
-      <div class="chips" id="genderChips">
-        <button class="chip seg" data-v="여" aria-pressed="false" onclick="segToggle(this,'genderChips')">여성</button>
-        <button class="chip seg" data-v="남" aria-pressed="false" onclick="segToggle(this,'genderChips')">남성</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <div class="label">기저질환·상태 <span class="opt">해당되는 것 모두</span></div>
-      <div class="chips" id="condChips">
-        <button class="chip" data-v="만성질환" aria-pressed="false" onclick="multiToggle(this,'없음')">만성질환(당뇨·심폐)</button>
-        <button class="chip" data-v="간질환" aria-pressed="false" onclick="multiToggle(this,'없음')">간질환</button>
-        <button class="chip" data-v="면역저하" aria-pressed="false" onclick="multiToggle(this,'없음')">면역저하·무비장</button>
-        <button class="chip" data-v="임신" aria-pressed="false" onclick="multiToggle(this,'없음')">임신 중</button>
-        <button class="chip" data-v="없음" aria-pressed="false" onclick="noneToggle(this,'condChips')">없음</button>
-      </div>
-    </div>
-
-    <div class="field">
-      <div class="label">이미 접종 완료 <span class="opt">아는 것만 · 선택</span></div>
-      <div class="chips" id="histChips">
-        <button class="chip" data-v="독감" aria-pressed="false" onclick="multiToggle(this)">독감(올해)</button>
-        <button class="chip" data-v="폐렴구균" aria-pressed="false" onclick="multiToggle(this)">폐렴구균</button>
-        <button class="chip" data-v="대상포진" aria-pressed="false" onclick="multiToggle(this)">대상포진</button>
-        <button class="chip" data-v="Tdap" aria-pressed="false" onclick="multiToggle(this)">파상풍(Tdap)</button>
-        <button class="chip" data-v="MMR" aria-pressed="false" onclick="multiToggle(this)">MMR</button>
-        <button class="chip" data-v="수두" aria-pressed="false" onclick="multiToggle(this)">수두</button>
-        <button class="chip" data-v="A형간염" aria-pressed="false" onclick="multiToggle(this)">A형간염</button>
-        <button class="chip" data-v="B형간염" aria-pressed="false" onclick="multiToggle(this)">B형간염</button>
-        <button class="chip" data-v="HPV" aria-pressed="false" onclick="multiToggle(this)">HPV</button>
-        <button class="chip" data-v="코로나19" aria-pressed="false" onclick="multiToggle(this)">코로나19</button>
-      </div>
-    </div>
-
-    </details>
-
-    <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 이 정보를 가족 프로필로 저장</button>
-    <div style="height:24px"></div>
-  </div>
-</section>
-
-<!-- ===== RESULT ===== -->
-<section id="result" class="screen">
-  <div class="wrap">
-    <button class="back" onclick="go('input')">← 다시 입력</button>
-    <div class="result-hero">
-      <p class="result-eyebrow">이 사람을 위한 결정</p>
-      <h2 id="resultHead">—</h2>
-      <p class="prof" id="resultProf"></p>
-    </div>
-    <div id="alertBanner"></div>
-    <div id="resultBody"></div>
-    <div id="travelBox"></div>
-    <div id="paceBox"></div>
-    <button class="btn btn-save btn-block explain-btn" onclick="explain()">✨ 쉬운 말로 설명 듣기 (AI)</button>
-    <div id="aiExplain"></div>
-
-    <div class="disclaimer">
-      <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
-      <b>비진단 참고 도구</b>예요(2025–2026 기준). 정확한 차수·간격·무료 대상은 연도·지자체에 따라 다를 수 있어
-      반드시 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a> 표준일정표와 관할 보건소·의료진을 통해 확인하세요.
-      질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>.
-    </div>
-    <div class="redo">
-      <button class="btn btn-block" onclick="go('input')">조건 바꿔 다시 보기</button>
-    </div>
-    <p class="footer">백신 챙겨 · 2026 · 흩어진 지침을 하나의 결정으로</p>
+    <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 가족 프로필로 저장</button>
+    <p class="footer">백신 챙겨 · Vaxkeep · 흩어진 지침을 하나의 결정으로</p>
   </div>
 </section>
 
@@ -399,6 +409,7 @@ function applyParsed(p){
   (p.hist||[]).forEach(v=>setChip('histChips',v,true));
   if(p.region!=null) document.getElementById('travelRegion').value=p.region||'';
   if(p.travelDate) document.getElementById('travel').value=p.travelDate;
+  syncAfterFill();
 }
 function autofillHeuristic(t){
   let hits=0;
@@ -426,6 +437,7 @@ function autofillHeuristic(t){
     }
   }
   flashHint(hits? ('✓ '+hits+'가지 정보를 채웠어요 — 확인 후 결과를 보세요') : '인식된 정보가 없어요 — 직접 선택해 주세요');
+  syncAfterFill();
 }
 function setSeg(v){ const el=document.querySelector('#genderChips .chip[data-v="'+v+'"]'); if(el) segToggle(el,'genderChips'); }
 function setChip(group,v,on){ const el=document.querySelector('#'+group+' .chip[data-v="'+v+'"]'); if(el) el.setAttribute('aria-pressed',String(on)); }
@@ -615,7 +627,83 @@ function liveUpdate(){
   if(ok){ const ax=document.getElementById('aiExplain'); if(ax) ax.innerHTML=''; }
   return ok;
 }
-function showResult(){ if(renderResultInPlace()){ document.getElementById('aiExplain').innerHTML=''; go('result'); } else { alert('나이를 입력해 주세요.'); } }
+function showResult(){ advance(); }
+
+/* ---------- 인터뷰 오케스트레이션: 한 번에 하나 · 요약칩 수정 · 실시간 갱신 ---------- */
+const answered = new Set();
+let curStep = 'age';
+let editing = false;
+const STEP_ORDER = ['age','gender','cond','hist']; // travel = opt-in
+function startApp(){
+  editing=false; go('app'); renderProfiles();
+  answered.clear(); STEP_ORDER.forEach(s=>{ if(stepHasValue(s)) answered.add(s); });
+  renderSummary();
+  document.getElementById('resultArea').style.display='none';
+  document.getElementById('extraRow').style.display='none';
+  liveUpdate();
+  showStep(STEP_ORDER.find(s=>!answered.has(s)) || 'age');
+}
+function showStep(id){
+  curStep = id;
+  document.querySelectorAll('#questionArea .step').forEach(s=>s.style.display=(s.dataset.step===id)?'block':'none');
+  document.getElementById('questionArea').style.display = id ? 'block' : 'none';
+  if(id){ const el=document.querySelector('#questionArea .step[data-step="'+id+'"]'); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+function stepHasValue(id){
+  if(id==='age') return !!document.getElementById('age').value;
+  if(id==='gender') return selected('genderChips').length>0;
+  if(id==='cond') return selected('condChips').length>0;
+  if(id==='hist') return selected('histChips').length>0;
+  if(id==='travel') return !!document.getElementById('travel').value || !!getRegion();
+  return false;
+}
+function afterAnswer(){
+  const wasAge = (curStep==='age');
+  renderSummary(); liveUpdate();
+  if(wasAge){ const ra=document.getElementById('resultArea'); if(ra&&ra.style.display!=='none') ra.scrollIntoView({behavior:'smooth',block:'start'}); }
+  if(editing){ editing=false; showStep(null); document.getElementById('extraRow').style.display='flex'; return; }
+  const i=STEP_ORDER.indexOf(curStep);
+  if(i>=0 && i<STEP_ORDER.length-1){ showStep(STEP_ORDER[i+1]); }
+  else { showStep(null); document.getElementById('extraRow').style.display='flex'; }
+}
+function advance(){
+  if(curStep==='age' && !stepHasValue('age')){ flashHint('나이를 입력해 주세요'); return; }
+  if(stepHasValue(curStep)) answered.add(curStep); else answered.delete(curStep);
+  afterAnswer();
+}
+function skipStep(){ answered.delete(curStep); afterAnswer(); }
+function editAnswer(id){ editing=true; document.getElementById('extraRow').style.display='none'; showStep(id); }
+function addTravel(){ editing=false; document.getElementById('extraRow').style.display='none'; showStep('travel'); }
+function scrollTopResult(){ const ra=document.getElementById('resultArea'); if(ra) ra.scrollIntoView({behavior:'smooth',block:'start'}); }
+function sumChip(id,label){ return '<button class="sum-chip" onclick="editAnswer(\''+id+'\')">'+escapeHtml(label)+' <span>✎</span></button>'; }
+function renderSummary(){
+  const bar=document.getElementById('summaryBar'); const chips=[];
+  const av=document.getElementById('age').value;
+  if(av){ const m=ageToMonths(parseInt(av,10), selected('unitChips')[0]||'year'); chips.push(sumChip('age', ageLabel(m))); }
+  const g=selected('genderChips')[0]; if(g) chips.push(sumChip('gender', g==='여'?'여성':'남성'));
+  const condArr=selected('condChips');
+  if(condArr.indexOf('없음')>=0) chips.push(sumChip('cond','특이사항 없음'));
+  else { const c=condArr.filter(x=>x!=='없음'); if(c.length) chips.push(sumChip('cond', c.join('·'))); }
+  const h=selected('histChips'); if(h.length) chips.push(sumChip('hist', '접종완료 '+h.length+'종'));
+  if(document.getElementById('travel').value||getRegion()) chips.push(sumChip('travel','✈️ 여행'));
+  bar.innerHTML = chips.join('');
+  bar.style.display = chips.length? 'flex':'none';
+  renderAccuracy();
+}
+function renderAccuracy(){
+  const el=document.getElementById('accuracy'); if(!el) return;
+  const n=STEP_ORDER.filter(s=>answered.has(s)).length; const pct=Math.max(8,Math.round(n/STEP_ORDER.length*100));
+  const msg = n<=1 ? '나이만으로도 대략 맞아요 · 조건을 더하면 정확해져요'
+            : n>=STEP_ORDER.length ? '조건을 충분히 반영했어요 ✓'
+            : '좋아요 · 조금만 더 답하면 더 정확해져요';
+  el.innerHTML = '<div class="acc-bar"><div style="width:'+pct+'%"></div></div><div class="acc-msg">정확도 · '+msg+'</div>';
+}
+function syncAfterFill(){
+  answered.clear(); STEP_ORDER.forEach(s=>{ if(stepHasValue(s)) answered.add(s); });
+  renderSummary(); liveUpdate();
+  const ra=document.getElementById('resultArea');
+  if(ra && ra.style.display!=='none'){ document.getElementById('extraRow').style.display='none'; showStep(null); ra.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
 async function explain(){
   const box=document.getElementById('aiExplain'); if(!box||!lastResult) return;
   if(!AI_API){ box.innerHTML='<div class="ai-note">✨ AI 개인화 설명은 2단계 서버(Vercel) 배포 후 활성화돼요. 지금은 규칙 엔진 결과와 아래 근거 링크를 참고하세요.</div>'; return; }
@@ -677,6 +765,7 @@ function applyForm(p){
   ['condChips','histChips'].forEach(g=>document.querySelectorAll('#'+g+' .chip').forEach(c=>c.setAttribute('aria-pressed','false')));
   (p.cond||[]).forEach(v=>setChip('condChips',v,true));
   (p.hist||[]).forEach(v=>setChip('histChips',v,true));
+  syncAfterFill();
 }
 function pfLabel(p){ const raw=parseInt(p.age,10); if(isNaN(raw)) return ''; return ageLabel(p.unit==='month'?raw:raw*12); }
 function renderProfiles(){
