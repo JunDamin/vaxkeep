@@ -835,13 +835,12 @@ async function refreshOutbreak(){
 let liveVaxList=null;
 async function refreshDataStatus(){
   const el=document.getElementById('dataStatus'); if(!el) return;
-  if(!AI_API){ el.innerHTML=''; return; }
   try{
-    const r=await fetch(AI_API+'/api/vaccineinfo'); const d=await r.json();
-    if(d && d.connected){
-      liveVaxList=d.items||[];
-      el.innerHTML='<button class="data-link" onclick="toggleVaxList()">🔗 질병청 예방접종 공공데이터 실시간 연결됨 · '+d.count+'종 ▾</button><div id="vaxList" class="vax-list" style="display:none"></div>';
-    } else el.innerHTML='';
+    // 로컬 스냅샷(공공데이터 내장) — 키·서버 없이 항상 작동
+    const r=await fetch('data/vaccine-diseases.json'); if(!r.ok){ el.innerHTML=''; return; }
+    const d=await r.json();
+    liveVaxList=d.items||[];
+    el.innerHTML='<button class="data-link" onclick="toggleVaxList()">🔗 질병청 공식 예방접종 대상 감염병 '+d.count+'종 · 공공데이터('+d.collectedAt+') ▾</button><div id="vaxList" class="vax-list" style="display:none"></div>';
   }catch(e){ el.innerHTML=''; }
 }
 function toggleVaxList(){

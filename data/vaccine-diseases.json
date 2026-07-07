@@ -1,0 +1,92 @@
+{
+  "source": "질병관리청 예방접종정보 OPEN API (data.go.kr/15084296, getCondVcnCd)",
+  "dataset": "15084296",
+  "collectedAt": "2026-07-07",
+  "count": 21,
+  "items": [
+    {
+      "cd": "01",
+      "name": "결핵 (Tuberculosis)"
+    },
+    {
+      "cd": "02",
+      "name": "B형간염 (Hepatitis B)"
+    },
+    {
+      "cd": "03",
+      "name": "디프테리아 (Diphtheria)"
+    },
+    {
+      "cd": "18",
+      "name": "파상풍 (Tetanus)"
+    },
+    {
+      "cd": "19",
+      "name": "백일해 (Pertussis)"
+    },
+    {
+      "cd": "04",
+      "name": "폴리오 (Poliomyelitis: Polio)"
+    },
+    {
+      "cd": "05",
+      "name": "b형헤모필루스인플루엔자 (Haemophilus influenzae type b: Hib)"
+    },
+    {
+      "cd": "06",
+      "name": "폐렴구균 감염증(Streptococcus pneumoniae)"
+    },
+    {
+      "cd": "07",
+      "name": "홍역 (Measles)"
+    },
+    {
+      "cd": "20",
+      "name": "유행성이하선염 (Mumps)"
+    },
+    {
+      "cd": "21",
+      "name": "풍진 (Rubella)"
+    },
+    {
+      "cd": "08",
+      "name": "수두 (Varicella)"
+    },
+    {
+      "cd": "09",
+      "name": "일본뇌염 (Japanese Encephalitis: JE)"
+    },
+    {
+      "cd": "10",
+      "name": "인플루엔자 (Influenza: Flu)"
+    },
+    {
+      "cd": "11",
+      "name": "장티푸스 (Typhoid Fever)"
+    },
+    {
+      "cd": "12",
+      "name": "신증후군출혈열 (Hemorragic fever with renal syndrome)"
+    },
+    {
+      "cd": "13",
+      "name": "A형간염 (Hepatitis A)"
+    },
+    {
+      "cd": "14",
+      "name": "로타바이러스 감염증 (Rotavirus)"
+    },
+    {
+      "cd": "15",
+      "name": "사람유두종바이러스 감염증 (Human papillomavirus: HPV)"
+    },
+    {
+      "cd": "16",
+      "name": "수막구균 (Neisseria meningitidis)"
+    },
+    {
+      "cd": "17",
+      "name": "대상포진 (Herpes zoster)"
+    }
+  ]
+}
