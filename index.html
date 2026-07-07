@@ -202,6 +202,19 @@
   .install-btn .opt{font-weight:600;color:var(--muted);font-size:11px;margin-left:2px}
   .privacy-note{margin-top:14px;text-align:center;font-size:12px;color:var(--muted);font-weight:600}
   .privacy-note b{color:var(--now-ink)}
+  /* 종류 비교 · 코쿠닝 */
+  .vtypes{margin:-2px 0 12px}
+  .vtypes summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--now-ink);list-style:none;user-select:none}
+  .vtypes summary::-webkit-details-marker{display:none}
+  .vt-body{margin-top:8px}
+  .vt-row{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;line-height:1.45}
+  .vt-row b{flex:0 0 42%;color:var(--ink);font-weight:800}
+  .vt-row span{color:var(--muted)}
+  .vt-note{font-size:11px;color:var(--muted);margin-top:7px}
+  .cocoon-banner{background:#FFF6E9;border:1px solid #F0D6A0;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13.5px;color:#6b4a12;line-height:1.55}
+  .cocoon-banner b{color:#5a3d0e}
+  .cocoon-share{appearance:none;border:none;background:var(--now);color:#fff;border-radius:9px;padding:6px 11px;font-family:inherit;font-weight:800;font-size:12px;margin-top:8px;cursor:pointer}
+  .cocoon-share:active{transform:scale(.96)}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -363,6 +376,7 @@
           <button class="chip" data-v="간질환" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">간질환</button>
           <button class="chip" data-v="면역저하" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">면역저하·무비장</button>
           <button class="chip" data-v="임신" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">임신 중</button>
+          <button class="chip" data-v="아기돌봄" aria-pressed="false" onclick="multiToggle(this,'없음');liveUpdate()">👶 12개월 미만 아기와 지냄</button>
           <button class="chip" data-v="없음" aria-pressed="false" onclick="noneToggle(this,'condChips');liveUpdate()">없음</button>
         </div>
         <div class="step-nav"><button class="btn btn-primary" onclick="advance()">다음 →</button><button class="btn-skip" onclick="skipStep()">건너뛰기</button></div>
@@ -586,12 +600,14 @@ const VACCINES = [
     when:(m)=> m>=65*Y ? '지금 · 1회 (보건소·지정 병의원)' : '만 65세 도래 시',
     status:(m,s,c,h)=> h.has('폐렴구균')?'done' : (m>=65*Y||(m>=19*Y&&chronic(c)))?'now' : (m>=60*Y?'later':'none'),
     why:(m)=> m>=65*Y ? '만 65세 이상은 국가예방접종으로 무료예요. 성인 주요 사망원인인 폐렴을 예방합니다.'
-                      : '만성질환·면역저하 성인은 65세 이전에도 접종을 권장해요(위험군).' },
+                      : '만성질환·면역저하 성인은 65세 이전에도 접종을 권장해요(위험군).',
+    types:[{n:'다당질(PPSV23)',d:'23종 · 만 65세+ 국가 무료'},{n:'단백결합(PCV13/15/20)',d:'면역기억↑ · PCV20은 1회로 광범위'}] },
 
   { id:'tdap', name:'Tdap/Td', disease:'파상풍·디프테리아·백일해', icon:'💉', free:()=>false, where:NIP+'336',
     when:(m,c)=> (c&&c.has('임신')) ? '임신 27~36주' : '만11세 1회 후 10년마다',
     status:(m,s,c,h)=> h.has('Tdap')?'done' : (m>=11*Y?'now' : (m>=9*Y?'later':'none')),
-    why:(m,c)=> (c&&c.has('임신')) ? '임신 27~36주 접종 시 항체가 태아에게 전달돼 신생아 백일해를 예방해요.'
+    why:(m,c)=> (c&&c.has('아기돌봄')) ? '👶 아기 보호(코쿠닝): 백일해는 신생아에게 치명적이에요. 곁의 어른(부모·조부모)이 Tdap을 맞아 아기를 지킵니다. 임신부는 매 임신 27~36주, 밀접접촉 성인은 최근 접종 없으면 1회 맞으세요.'
+                : (c&&c.has('임신')) ? '임신 27~36주 접종 시 항체가 태아에게 전달돼 신생아 백일해를 예방해요.'
                                   : '만11~12세 Tdap 1회 후 10년마다 Td 보강이 필요해요. 어릴 때 만든 면역은 약해집니다.' },
 
   { id:'mmr', name:'MMR', disease:'홍역·유행성이하선염·풍진', icon:'🔴', where:NIP+'336',
@@ -642,15 +658,18 @@ const VACCINES = [
     free:(m,c)=> m>=65*Y || c.has('임신') || (m>=6&&m<=156),
     when:'매년 10~11월 (2025–2026절기)',
     status:(m,s,c,h)=> h.has('독감')?'done' : (m>=6?'now':'later'),
-    why:(m,c)=> c&&c.has('임신') ? '임신부는 매년 접종을 권장하며 국가 무료 대상이에요.'
+    why:(m,c)=> (c&&c.has('아기돌봄')) ? '👶 아기 보호(코쿠닝): 아기 주변 어른이 매년 독감을 맞으면 백신을 못 맞는 아기에게 전파를 막아요.'
+             : c&&c.has('임신') ? '임신부는 매년 접종을 권장하며 국가 무료 대상이에요.'
              : (m>=65*Y||(m>=6&&m<=156)) ? '어린이(6개월~13세)·만65세 이상·임신부는 국가 무료예요. 매년 접종하세요.'
-             : '유행주가 매년 바뀌어 성인도 매년 맞아야 효과가 유지돼요.' },
+             : '유행주가 매년 바뀌어 성인도 매년 맞아야 효과가 유지돼요.',
+    types:[{n:'3가',d:'A형 2 + B형 1'},{n:'4가',d:'A형 2 + B형 2 (더 넓은 예방, 현재 주류)'}] },
 
   { id:'hzv', name:'대상포진', disease:'대상포진', icon:'🔥', free:()=>false, where:NIP+'336',
     when:'재조합백신 2회(2~6개월) · 비급여',
     status:(m,s,c,h)=> h.has('대상포진')?'done' : (m>=50*Y||(immuno(c)&&m>=18*Y))?'now' : (m>=45*Y?'later':'none'),
     why:(m,c)=> (c&&immuno(c)) ? '면역저하자는 18세 이상부터 재조합백신(RZV) 접종을 권장해요(생백신 금기).'
-                              : '만 50세 이상 재조합백신(RZV) 2회를 권장해요. 국가 무료는 아니지만 일부 지자체가 지원해요.' },
+                              : '만 50세 이상 재조합백신(RZV) 2회를 권장해요. 국가 무료는 아니지만 일부 지자체가 지원해요.',
+    types:[{n:'생백신(스카이조스터)',d:'1회 · 효능 약 50% · 저렴 · 면역저하자 금기'},{n:'사백신(싱그릭스, RZV)',d:'2회 · 효능 90%+ · 고가 · 면역저하자 가능'}] },
 
   { id:'cov', name:'코로나19', disease:'COVID-19', icon:'🦠', where:NIP+'336',
     free:(m,c)=> m>=65*Y || (c&&chronic(c)) || (c&&c.has('임신')),
@@ -701,7 +720,8 @@ function renderResultInPlace(){
     : `<div class="alert-idle">🛡️ 현재 특별한 유행 경보 없음 · 독감 유행 시즌(10~2월)엔 자동으로 우선순위를 올려요.</div>`;
 
   const body = document.getElementById('resultBody');
-  body.innerHTML = renderGroup('지금 챙기세요','var(--now)','now',groups.now,m,cond)
+  const cocoon = cond.has('아기돌봄') ? `<div class="cocoon-banner">👶 <b>아기 보호(코쿠닝)</b> — 백신을 못 맞는 아기는 곁의 어른이 대신 지켜요. 아래 <b>백일해(Tdap)·독감</b>을 온 가족이 함께 챙기세요. <button class="cocoon-share" onclick="shareCocoon()">📤 가족에게 공유</button></div>` : '';
+  body.innerHTML = cocoon + renderGroup('지금 챙기세요','var(--now)','now',groups.now,m,cond)
                  + renderGroup('앞으로 챙기세요','var(--later)','later',groups.later,m,cond)
                  + renderGroup('완료·해당 없음','var(--done)','done',groups.done,m,cond);
   if(n===0 && groups.later.length===0){
@@ -829,6 +849,7 @@ function renderGroup(title,color,cls,items,m,cond){
         ${alertB}${badge}
       </div>
       <p class="vx-why">${why}</p>
+      ${(cls!=='done'&&v.types) ? `<details class="vtypes"><summary>💊 종류 비교 (중립 정보)</summary><div class="vt-body">${v.types.map(t=>`<div class="vt-row"><b>${escapeHtml(t.n)}</b><span>${escapeHtml(t.d)}</span></div>`).join('')}<div class="vt-note">추천이 아닌 참고용 · 최종 선택은 의료진과 상담하세요.</div></div></details>` : ''}
       <div class="vx-meta"><span class="vx-when">🗓 ${when}</span>${onsetM}${link}</div>
     </div>`;
   }).join('');
@@ -1022,6 +1043,11 @@ async function copyBenefit(cd){
 }
 let _toastT;
 function toast(m){ let t=document.getElementById('_toast'); if(!t){ t=document.createElement('div'); t.id='_toast'; t.className='toast'; document.body.appendChild(t);} t.textContent=m; t.style.display='block'; clearTimeout(_toastT); _toastT=setTimeout(()=>{t.style.display='none';},1800); }
+async function shareCocoon(){
+  const msg="우리 아기를 지키려면 곁의 어른 모두 백일해(Tdap)·독감 접종! 네이버에 '백일해 코쿠닝' 검색해 보세요. (백신 챙겨)";
+  if(navigator.share){ try{ await navigator.share({title:'백신 챙겨', text:msg}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(msg); toast('공유 문구를 복사했어요'); }catch(e){ prompt('복사해서 공유하세요', msg); }
+}
 
 /* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
 function getTravel(){ const v=document.getElementById('travel').value; if(!v) return null; const d=new Date(v); return isNaN(d)?null:d; }
