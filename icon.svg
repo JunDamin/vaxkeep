@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="백신 챙겨">
+  <rect width="512" height="512" rx="112" fill="#12856A"/>
+  <!-- 방패(보호) + 체크(결정) -->
+  <path d="M256 96c46 26 96 34 132 34v122c0 92-62 150-132 180-70-30-132-88-132-180V130c36 0 86-8 132-34z"
+        fill="#12856A" stroke="#EAF4EF" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M198 268l40 40 82-92" fill="none" stroke="#FFFFFF" stroke-width="30"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

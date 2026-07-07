@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>백신 챙겨 — 어른 예방접종 한 화면 결정</title>
-<meta name="description" content="흩어진 성인 예방접종 지침을 당신의 상황 하나로 정리해, '지금 챙길 백신'만 보여드립니다." />
+<title>백신 챙겨 — 온 가족 국가예방접종 한 화면 결정</title>
+<meta name="description" content="영유아부터 어르신까지, 국가예방접종(NIP) 전체를 나이 하나로 정리해 '지금 챙길 백신'만 보여드립니다." />
 <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#12856A" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="백신 챙겨" />
 <style>
   :root{
     --paper:#F7F5F0; --surface:#FFFFFF; --ink:#16130F; --muted:#6B6560; --line:#E6E1D8;
@@ -21,8 +27,7 @@
   body{
     font-family:"Pretendard",system-ui,-apple-system,sans-serif;
     background:var(--paper); color:var(--ink);
-    line-height:1.6; -webkit-font-smoothing:antialiased;
-    letter-spacing:-.01em;
+    line-height:1.6; -webkit-font-smoothing:antialiased; letter-spacing:-.01em;
   }
   .wrap{max-width:640px;margin:0 auto;padding:0 22px}
   .screen{display:none;min-height:100dvh;padding:clamp(40px,9vh,88px) 0}
@@ -32,31 +37,26 @@
   .brand{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;letter-spacing:-.02em}
   .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--now);display:inline-block}
 
-  /* HOME */
   .kicker{color:var(--now);font-weight:700;font-size:14px;letter-spacing:.02em;margin-top:56px}
   h1{font-size:clamp(30px,7.4vw,46px);line-height:1.18;font-weight:800;letter-spacing:-.03em;margin:16px 0 20px}
   h1 .fade{color:var(--muted)}
-  .lede{font-size:clamp(16px,4.2vw,18px);color:var(--muted);max-width:30ch}
+  .lede{font-size:clamp(16px,4.2vw,18px);color:var(--muted);max-width:32ch}
   .home-meta{margin-top:44px;display:flex;gap:26px;flex-wrap:wrap}
   .home-meta div{font-size:13px;color:var(--muted)}
   .home-meta b{display:block;font-size:22px;color:var(--ink);font-weight:800;letter-spacing:-.02em}
 
-  .btn{
-    appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:700;
-    font-size:16px;letter-spacing:-.01em;border-radius:14px;padding:16px 26px;
-    background:var(--ink);color:#fff;transition:transform .15s,box-shadow .2s,background .2s;
-  }
+  .btn{appearance:none;border:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:16px;
+    letter-spacing:-.01em;border-radius:14px;padding:16px 26px;background:var(--ink);color:#fff;
+    transition:transform .15s,box-shadow .2s,background .2s;}
   .btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(22,19,15,.18)}
   .btn:active{transform:translateY(0)}
   .btn-primary{background:var(--now)}
   .btn-primary:hover{box-shadow:0 8px 22px rgba(18,133,106,.28)}
   .btn-block{width:100%;padding:18px}
-  .btn-ghost{background:transparent;color:var(--muted);padding:10px 0;font-weight:600}
   .cta-row{margin-top:38px}
 
-  /* INPUT */
-  .back{background:none;border:none;color:var(--muted);font-family:inherit;font-size:15px;
-    cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 0;margin-bottom:8px}
+  .back{background:none;border:none;color:var(--muted);font-family:inherit;font-size:15px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:6px 0;margin-bottom:8px}
   .step-title{font-size:clamp(24px,6vw,32px);font-weight:800;letter-spacing:-.03em;margin:14px 0 6px}
   .step-sub{color:var(--muted);margin-bottom:30px}
   .field{margin-bottom:26px}
@@ -64,8 +64,8 @@
   .label .opt{font-weight:500;color:var(--muted);font-size:13px}
 
   .nl{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-  .nl textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:15px;
-    color:var(--ink);background:transparent;min-height:46px;line-height:1.5}
+  .nl textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:15px;color:var(--ink);
+    background:transparent;min-height:46px;line-height:1.5}
   .nl textarea::placeholder{color:#B4AEA4}
   .nl-bar{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:12px}
   .nl-hint{font-size:12.5px;color:var(--muted)}
@@ -76,22 +76,33 @@
   .divider{display:flex;align-items:center;gap:14px;color:#B4AEA4;font-size:12.5px;margin:26px 0}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
+  .age-wrap{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   .age-row{display:flex;align-items:baseline;gap:10px;background:var(--surface);border:1px solid var(--line);
-    border-radius:14px;padding:14px 18px;box-shadow:var(--shadow);max-width:200px}
-  .age-row input{width:72px;border:none;outline:none;font-family:inherit;font-size:30px;font-weight:800;
+    border-radius:14px;padding:14px 18px;box-shadow:var(--shadow)}
+  .age-row input{width:82px;border:none;outline:none;font-family:inherit;font-size:30px;font-weight:800;
     color:var(--ink);background:transparent;letter-spacing:-.02em}
-  .age-row span{color:var(--muted);font-weight:600}
 
   .chips{display:flex;flex-wrap:wrap;gap:10px}
   .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;
-    padding:11px 17px;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;
-    transition:all .16s;user-select:none}
+    padding:11px 17px;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;transition:all .16s;user-select:none}
   .chip:hover{border-color:#cfc8bc}
   .chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
   .chip.seg[aria-pressed="true"]{background:var(--now);border-color:var(--now)}
 
-  /* RESULT */
-  .result-hero{margin-bottom:8px}
+  .profiles{margin-bottom:26px}
+  .profiles .label{margin-bottom:10px}
+  .pf-bar{display:flex;flex-wrap:wrap;gap:9px}
+  .pf{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+    border-radius:999px;padding:8px 8px 8px 15px;box-shadow:var(--shadow)}
+  .pf button{border:none;background:none;font-family:inherit;cursor:pointer;color:var(--ink)}
+  .pf .pf-load{font-weight:700;font-size:14px}
+  .pf .pf-sub{color:var(--muted);font-weight:500;font-size:12.5px;margin-left:2px}
+  .pf .pf-del{width:22px;height:22px;border-radius:50%;color:var(--muted);font-size:15px;line-height:1;
+    display:grid;place-items:center;transition:background .15s}
+  .pf .pf-del:hover{background:var(--done-soft);color:var(--ink)}
+  .btn-save{background:var(--surface);color:var(--now);border:1px solid var(--now-soft);margin-top:12px}
+  .btn-save:hover{box-shadow:0 6px 18px rgba(18,133,106,.14)}
+
   .result-eyebrow{color:var(--now);font-weight:700;font-size:14px;margin-bottom:8px}
   .result-hero h2{font-size:clamp(26px,6.4vw,36px);font-weight:800;letter-spacing:-.03em;line-height:1.2}
   .result-hero h2 em{font-style:normal;color:var(--now)}
@@ -102,14 +113,15 @@
   .swatch{width:10px;height:10px;border-radius:50%}
   .group-head .n{color:var(--muted);font-weight:600}
 
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-    padding:20px 20px 18px;box-shadow:var(--shadow);margin-bottom:12px;border-left:4px solid transparent}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 18px;
+    box-shadow:var(--shadow);margin-bottom:12px;border-left:4px solid transparent}
   .card.now{border-left-color:var(--now)}
   .card.later{border-left-color:var(--later)}
   .card.done{border-left-color:var(--done);opacity:.9}
-  .card-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .card-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
   .vx-icon{font-size:24px;line-height:1}
   .vx-name{font-weight:800;font-size:18px;letter-spacing:-.02em;flex:1}
+  .vx-name small{display:block;font-weight:600;font-size:12.5px;color:var(--muted);letter-spacing:0}
   .badge{font-size:12px;font-weight:800;padding:5px 10px;border-radius:8px;white-space:nowrap}
   .badge.free{background:var(--now-soft);color:var(--now)}
   .badge.paid{background:#F3F0EA;color:var(--muted);border:1px solid var(--line)}
@@ -137,15 +149,15 @@
   <div class="wrap">
     <span class="brand"><span class="dot"></span> 백신 챙겨</span>
     <p class="kicker">성인 예방접종 결정 도우미</p>
-    <h1>어린이는 챙기는데,<br /><span class="fade">어른 백신은 누가 챙기죠?</span></h1>
-    <p class="lede">흩어진 성인 예방접종 지침을 <b>당신의 상황 하나로</b> 정리해, ‘지금 챙길 백신’만 보여드려요.</p>
+    <h1>어린이는 챙기는데,<br /><span class="fade">어른은 누가 챙기죠?</span></h1>
+    <p class="lede">흩어진 <b>성인 예방접종 지침</b>을 당신의 상황 하나로 정리해 ‘지금 챙길 백신’만. 아이 접종은 <b>가족 프로필</b>로 함께 관리하세요.</p>
     <div class="cta-row">
       <button class="btn btn-primary" onclick="go('input')">내 백신 확인하기 →</button>
     </div>
     <div class="home-meta">
-      <div><b>3분</b> 안에 확인</div>
-      <div><b>5종</b> 핵심 성인 백신</div>
-      <div><b>무료/유료</b> 한눈에</div>
+      <div><b>성인 중심</b> · 온 가족</div>
+      <div><b>가족 프로필</b> 기기 저장</div>
+      <div><b>설치형</b> 웹앱(PWA)</div>
     </div>
   </div>
 </section>
@@ -154,15 +166,20 @@
 <section id="input" class="screen">
   <div class="wrap">
     <button class="back" onclick="go('home')">← 처음으로</button>
-    <h2 class="step-title">몇 가지만 알려주세요</h2>
-    <p class="step-sub">입력하신 정보는 이 브라우저 안에서만 쓰이고 저장되지 않아요.</p>
+    <h2 class="step-title">누구의 백신을 볼까요?</h2>
+    <p class="step-sub">저장된 프로필은 <b>이 기기에만</b> 보관돼요(서버 전송 없음).</p>
+
+    <div class="profiles field" id="profiles" style="display:none">
+      <div class="label">우리 가족 <span class="opt">눌러서 불러오기</span></div>
+      <div class="pf-bar" id="pfBar"></div>
+    </div>
 
     <div class="field">
       <div class="label">한 문장으로 적어도 돼요 <span class="opt">선택 · 자동으로 채워드려요</span></div>
       <div class="nl">
-        <textarea id="nlText" placeholder="예: 63세 여자, 당뇨 있고 대상포진은 안 맞았어요"></textarea>
+        <textarea id="nlText" placeholder="예: 생후 4개월 아기 / 63세 당뇨, 대상포진 안 맞음"></textarea>
         <div class="nl-bar">
-          <span class="nl-hint" id="nlHint">문장을 읽어 나이·질환·접종이력을 채웁니다</span>
+          <span class="nl-hint" id="nlHint">문장을 읽어 나이·상태·접종이력을 채웁니다</span>
           <button class="nl-fill" onclick="autofill()">✦ 자동 채우기</button>
         </div>
       </div>
@@ -172,9 +189,12 @@
 
     <div class="field">
       <div class="label">나이</div>
-      <div class="age-row">
-        <input id="age" type="number" inputmode="numeric" min="19" max="120" placeholder="00" />
-        <span>세</span>
+      <div class="age-wrap">
+        <div class="age-row"><input id="age" type="number" inputmode="numeric" min="0" max="120" placeholder="00" /></div>
+        <div class="chips" id="unitChips">
+          <button class="chip seg" data-v="year" aria-pressed="true" onclick="segToggle(this,'unitChips')">세</button>
+          <button class="chip seg" data-v="month" aria-pressed="false" onclick="segToggle(this,'unitChips')">개월</button>
+        </div>
       </div>
     </div>
 
@@ -187,28 +207,34 @@
     </div>
 
     <div class="field">
-      <div class="label">기저질환 <span class="opt">해당되는 것 모두</span></div>
+      <div class="label">기저질환·상태 <span class="opt">해당되는 것 모두</span></div>
       <div class="chips" id="condChips">
-        <button class="chip" data-v="당뇨" aria-pressed="false" onclick="multiToggle(this,'없음')">당뇨</button>
-        <button class="chip" data-v="심폐" aria-pressed="false" onclick="multiToggle(this,'없음')">심장·폐질환</button>
-        <button class="chip" data-v="간" aria-pressed="false" onclick="multiToggle(this,'없음')">간질환</button>
-        <button class="chip" data-v="면역저하" aria-pressed="false" onclick="multiToggle(this,'없음')">면역저하</button>
+        <button class="chip" data-v="만성질환" aria-pressed="false" onclick="multiToggle(this,'없음')">만성질환(당뇨·심폐)</button>
+        <button class="chip" data-v="간질환" aria-pressed="false" onclick="multiToggle(this,'없음')">간질환</button>
+        <button class="chip" data-v="면역저하" aria-pressed="false" onclick="multiToggle(this,'없음')">면역저하·무비장</button>
         <button class="chip" data-v="임신" aria-pressed="false" onclick="multiToggle(this,'없음')">임신 중</button>
         <button class="chip" data-v="없음" aria-pressed="false" onclick="noneToggle(this,'condChips')">없음</button>
       </div>
     </div>
 
     <div class="field">
-      <div class="label">최근 접종 이력 <span class="opt">맞은 것만 · 선택</span></div>
+      <div class="label">이미 접종 완료 <span class="opt">아는 것만 · 선택</span></div>
       <div class="chips" id="histChips">
-        <button class="chip" data-v="독감" aria-pressed="false" onclick="multiToggle(this)">독감</button>
+        <button class="chip" data-v="독감" aria-pressed="false" onclick="multiToggle(this)">독감(올해)</button>
         <button class="chip" data-v="폐렴구균" aria-pressed="false" onclick="multiToggle(this)">폐렴구균</button>
         <button class="chip" data-v="대상포진" aria-pressed="false" onclick="multiToggle(this)">대상포진</button>
         <button class="chip" data-v="Tdap" aria-pressed="false" onclick="multiToggle(this)">파상풍(Tdap)</button>
+        <button class="chip" data-v="MMR" aria-pressed="false" onclick="multiToggle(this)">MMR</button>
+        <button class="chip" data-v="수두" aria-pressed="false" onclick="multiToggle(this)">수두</button>
+        <button class="chip" data-v="A형간염" aria-pressed="false" onclick="multiToggle(this)">A형간염</button>
+        <button class="chip" data-v="B형간염" aria-pressed="false" onclick="multiToggle(this)">B형간염</button>
+        <button class="chip" data-v="HPV" aria-pressed="false" onclick="multiToggle(this)">HPV</button>
+        <button class="chip" data-v="코로나19" aria-pressed="false" onclick="multiToggle(this)">코로나19</button>
       </div>
     </div>
 
     <button class="btn btn-primary btn-block" onclick="showResult()">지금 챙길 백신 보기</button>
+    <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 이 정보를 가족 프로필로 저장</button>
     <div style="height:24px"></div>
   </div>
 </section>
@@ -218,17 +244,17 @@
   <div class="wrap">
     <button class="back" onclick="go('input')">← 다시 입력</button>
     <div class="result-hero">
-      <p class="result-eyebrow">당신을 위한 결정</p>
+      <p class="result-eyebrow">이 사람을 위한 결정</p>
       <h2 id="resultHead">—</h2>
       <p class="prof" id="resultProf"></p>
     </div>
     <div id="resultBody"></div>
 
     <div class="disclaimer">
-      <b>참고용 정보입니다.</b> 이 서비스는 질병관리청·대한감염학회(KSID) 성인 예방접종 권고를 규칙으로 요약한
-      <b>비진단 참고 도구</b>로(2025–2026절기·2026년 기준), 개인별 최종 접종 판단과 무료 지원 대상은 반드시 의료진·관할 보건소와 확인하세요.
-      연령·조건·간격의 정확한 기준은 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a>,
-      질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>에서 확인할 수 있습니다.
+      <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
+      <b>비진단 참고 도구</b>예요(2025–2026 기준). 정확한 차수·간격·무료 대상은 연도·지자체에 따라 다를 수 있어
+      반드시 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a> 표준일정표와 관할 보건소·의료진을 통해 확인하세요.
+      질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>.
     </div>
     <div class="redo">
       <button class="btn btn-block" onclick="go('input')">조건 바꿔 다시 보기</button>
@@ -249,7 +275,7 @@ function go(id){
 function multiToggle(el, clears){
   const on = el.getAttribute('aria-pressed')==='true';
   el.setAttribute('aria-pressed', String(!on));
-  if(!on && clears){ // turning on a real condition clears the "없음" chip
+  if(!on && clears){
     const none = document.querySelector('#condChips .chip[data-v="'+clears+'"]');
     if(none) none.setAttribute('aria-pressed','false');
   }
@@ -260,9 +286,8 @@ function noneToggle(el, group){
   el.setAttribute('aria-pressed', String(!on));
 }
 function segToggle(el, group){
-  const on = el.getAttribute('aria-pressed')==='true';
   document.querySelectorAll('#'+group+' .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
-  el.setAttribute('aria-pressed', String(!on));
+  el.setAttribute('aria-pressed','true');
 }
 function selected(group){
   return [...document.querySelectorAll('#'+group+' .chip[aria-pressed="true"]')].map(c=>c.dataset.v);
@@ -273,155 +298,212 @@ function autofill(){
   const t = (document.getElementById('nlText').value||'').replace(/\s+/g,' ');
   if(!t.trim()){ flashHint('문장을 먼저 입력해 주세요'); return; }
   let hits=0;
-  // age
-  const am = t.match(/(\d{2,3})\s*(?:세|살)/) || t.match(/\b(\d{2,3})\b/);
-  if(am){ document.getElementById('age').value = am[1]; hits++; }
-  // gender
-  if(/여자|여성|여$|\b여\b/.test(t)) setSeg('여');
-  else if(/남자|남성|남$|\b남\b/.test(t)) setSeg('남');
-  // conditions
+  const mMonth = t.match(/(\d{1,2})\s*(?:개월|달)/);
+  const mYear  = t.match(/(\d{1,3})\s*(?:세|살)/);
+  if(mMonth){ document.getElementById('age').value=mMonth[1]; segToggle(document.querySelector('#unitChips .chip[data-v="month"]'),'unitChips'); hits++; }
+  else if(mYear){ document.getElementById('age').value=mYear[1]; segToggle(document.querySelector('#unitChips .chip[data-v="year"]'),'unitChips'); hits++; }
+  else { const n=t.match(/\b(\d{1,3})\b/); if(n){ document.getElementById('age').value=n[1]; hits++; } }
+  if(/여자|여성|여아|딸/.test(t)) setSeg('여');
+  else if(/남자|남성|남아|아들/.test(t)) setSeg('남');
   const condMap = {
-    '당뇨':/당뇨/, '심폐':/심장|심부전|협심|부정맥|폐질환|천식|copd|만성폐/i,
-    '간':/간질환|간경화|간경변|간염|지방간/, '면역저하':/면역저하|항암|이식|스테로이드|hiv|백혈병/i,
-    '임신':/임신|임산부|임신부/
+    '만성질환':/당뇨|심장|심부전|폐질환|천식|만성질환|고혈압/, '간질환':/간질환|간경화|간경변|간염|지방간/,
+    '면역저하':/면역저하|항암|이식|스테로이드|무비장|비장절제|hiv|백혈병/i, '임신':/임신|임산부|임신부/
   };
   let anyCond=false;
-  for(const [v,re] of Object.entries(condMap)){
-    if(re.test(t)){ setChip('condChips',v,true); anyCond=true; hits++; }
-  }
-  if(!anyCond && /(기저질환|지병).{0,4}없|건강한|아무.?것도 없/.test(t)){ setChip('condChips','없음',true); }
-  // history: only mark "맞았다" style, not "안 맞았다"
-  const vaxMap = {'독감':/독감|인플루엔자/, '폐렴구균':/폐렴/, '대상포진':/대상포진/, 'Tdap':/파상풍|tdap/i};
+  for(const [v,re] of Object.entries(condMap)){ if(re.test(t)){ setChip('condChips',v,true); anyCond=true; hits++; } }
+  if(!anyCond && /(기저질환|지병).{0,4}없|건강한|아무.?것도 없/.test(t)) setChip('condChips','없음',true);
+  const vaxMap = {'독감':/독감|인플루엔자/, '폐렴구균':/폐렴/, '대상포진':/대상포진/, 'Tdap':/파상풍|tdap/i,
+    'MMR':/mmr|홍역|풍진/i, '수두':/수두/, 'A형간염':/a형간염|에이형간염/i, 'B형간염':/b형간염|비형간염/i,
+    'HPV':/hpv|자궁경부/i, '코로나19':/코로나|covid/i};
   for(const [v,re] of Object.entries(vaxMap)){
-    const m = t.match(new RegExp('([^.,]*?'+re.source+'[^.,]*)', 'i'));
-    if(m){
-      const clause = m[1];
-      const notDone = /안\s*맞|못\s*맞|안했|안 했|맞은 적 없|접종.?안|미접종/.test(clause);
-      if(!notDone && /맞았|맞음|접종했|완료|맞은 적 있/.test(clause)){ setChip('histChips',v,true); hits++; }
+    const m = t.match(new RegExp('([^.,]*?'+re.source+'[^.,]*)','i'));
+    if(m){ const cl=m[1];
+      if(!/안\s*맞|못\s*맞|안했|안 했|맞은 적 없|접종.?안|미접종/.test(cl) && /맞았|맞음|접종했|완료|맞은 적 있/.test(cl)){ setChip('histChips',v,true); hits++; }
     }
   }
   flashHint(hits? ('✓ '+hits+'가지 정보를 채웠어요 — 확인 후 결과를 보세요') : '인식된 정보가 없어요 — 직접 선택해 주세요');
 }
-function setSeg(v){ const el=document.querySelector('#genderChips .chip[data-v="'+v+'"]'); if(el) segToggle(el,'genderChips'), el.setAttribute('aria-pressed','true'); }
-function setChip(group,v,on){ const el=document.querySelector('#'+group+' .chip[data-v="'+v+'"]'); if(el) el.setAttribute('aria-pressed', String(on)); }
+function setSeg(v){ const el=document.querySelector('#genderChips .chip[data-v="'+v+'"]'); if(el) segToggle(el,'genderChips'); }
+function setChip(group,v,on){ const el=document.querySelector('#'+group+' .chip[data-v="'+v+'"]'); if(el) el.setAttribute('aria-pressed',String(on)); }
 function flashHint(msg){ const h=document.getElementById('nlHint'); h.textContent=msg; h.style.color='var(--now)'; setTimeout(()=>h.style.color='',2600); }
 
-/* ---------- rule engine (clinical logic — verified 2026-07 against nip.kdca.go.kr / KSID) ---------- */
-const NIP = 'https://nip.kdca.go.kr/irhp/mngm/goVcntMngm.do?menuLv=3&menuCd='; // 위탁의료기관·보건소 검색
-const hasChronic = c => c.has('당뇨')||c.has('심폐')||c.has('간')||c.has('면역저하');
+/* ---------- rule engine: 국가예방접종(NIP) 전체 · 연령(개월) 기반 ---------- */
+/* verified 2026-07 against nip.kdca.go.kr 표준예방접종일정표 / KSID. 나이는 개월(m)로 환산해 판정. */
+const NIP='https://nip.kdca.go.kr/irhp/mngm/goVcntMngm.do?menuLv=3&menuCd=';
+const Y=12; // 1세 = 12개월
+const chronic = c => c.has('만성질환')||c.has('간질환')||c.has('면역저하');
+const immuno  = c => c.has('면역저하');
 
+// status: 'now'(지금) | 'later'(앞으로) | 'done'(완료) | 'none'(해당없음)
 const VACCINES = [
-  {
-    id:'flu', name:'인플루엔자(독감)', icon:'🤧',
-    status:(a,c,h)=> h.has('독감') ? 'done' : 'now',
-    free:(a,c)=> a>=65 || c.has('임신'),  // NIP 무료: 65세+·임신부 (만성질환은 권장이나 65세 미만은 유료)
-    why:(a,c)=> c.has('임신') ? '임신 중에는 독감 합병증 위험이 커요. 태아 보호 효과도 있고, 임신부는 국가 무료 대상이에요.'
-              : a>=65 ? '만 65세 이상은 매년 국가 무료로 접종할 수 있어요. 폐렴·입원 위험을 낮춥니다.'
-              : hasChronic(c) ? '만성질환이 있으면 독감이 폐렴·입원으로 이어지기 쉬워요. 매년 접종을 권장해요(65세 미만은 유료).'
-              : '유행 바이러스가 매년 바뀌어 성인도 매년 맞아야 효과가 유지돼요.',
-    when:'매년 10~11월 (2025–2026절기 기준)',
-    where: NIP+'333'
-  },
-  {
-    id:'pcv', name:'폐렴구균', icon:'🫁',
-    status:(a,c,h)=> h.has('폐렴구균') ? 'done' : (a>=65||hasChronic(c)) ? 'now' : (a>=60 ? 'later':'none'),
-    free:(a,c)=> a>=65,  // NIP: 65세+ 평생 1회 무료
-    why:(a,c)=> a>=65 ? '만 65세 이상은 국가예방접종(NIP)으로 평생 1회 무료예요. 최신 권고는 결합백신(PCV20) 1회 접종을 우선합니다.'
-              : hasChronic(c) ? '만성질환이 있으면 폐렴구균 감염 위험이 높아 나이와 상관없이 접종을 권장해요(결합백신 포함, 65세 미만은 유료).'
-              : '만 65세가 되면 무료로 접종할 수 있어요. 그때 챙기면 됩니다.',
-    when:(a)=> a>=65 ? '지금 · 평생 1회 (보건소·지정 병의원)' : '만 65세 도래 시',
-    where: NIP+'334'
-  },
-  {
-    id:'zos', name:'대상포진', icon:'🔥',
-    status:(a,c,h)=> h.has('대상포진') ? 'done' : (a>=50||c.has('면역저하')) ? 'now' : 'none',
-    free:()=> false,  // 전국 NIP 아님 (일부 지자체만 취약계층 지원)
-    why:(a,c)=> c.has('면역저하') ? '면역저하자는 18세 이상부터 재조합백신(RZV·싱그릭스) 접종을 권장해요(생백신 금기). 신경통 합병증 위험이 큽니다.'
-              : '만 50세 이상은 재조합백신(RZV) 2회 접종을 권장해요. 국가 무료는 아니지만 일부 지자체가 취약계층을 지원하니 관할 보건소를 확인하세요.',
-    when:'재조합백신 2회 (2~6개월 간격) · 비급여',
-    where: NIP+'336'
-  },
-  {
-    id:'tdap', name:'파상풍·백일해 (Tdap/Td)', icon:'🩹',
-    status:(a,c,h)=> h.has('Tdap') ? 'done' : 'now',
-    free:()=> false,  // 성인 전국 무료 프로그램 없음
-    why:(a,c)=> c.has('임신') ? '임신 27~36주에 접종하면 항체가 태아에게 전달돼 신생아 백일해를 예방해요(성인은 유료).'
-              : '어릴 때 만든 면역은 시간이 지나면 약해져요. 마지막 접종이 10년 넘었다면 Td 또는 Tdap 보강이 필요해요(성인은 유료).',
-    when:(a,c)=> c.has('임신') ? '임신 27~36주' : '마지막 접종 10년 경과 시',
-    where: NIP+'336'
-  },
-  {
-    id:'hepa', name:'A형간염', icon:'💧',
-    status:(a,c,h)=> (a>=40||c.has('간')) ? 'now' : 'none',
-    free:(a,c)=> c.has('간') && a>=27 && a<=56,  // 고위험군(만성간질환 등, 1970~99년생) 조건부 무료
-    why:(a,c)=> c.has('간') ? '만성 간질환 등 고위험군은 A형간염 감염 시 중증 위험이 높아 접종을 권장해요. 일부 고위험군(1970~99년생)은 국가 무료 대상이니 보건소에서 확인하세요.'
-              : '만 40세 이상은 자연 항체 보유율이 낮아, 항체검사 후 항체가 없으면 접종을 권장해요.',
-    when:(a)=> a>=40 ? '항체검사 후 · 2회 (0, 6개월)' : '2회 (0, 6개월)',
-    where: NIP+'336'
-  }
+  { id:'bcg', name:'BCG', disease:'결핵', icon:'🫁', free:()=>true, where:NIP+'336',
+    when:'생후 4주 이내 1회',
+    status:(m,s,c,h)=> m<=12 ? 'now' : 'none',
+    why:()=>'생후 4주 이내 접종하는 결핵 예방 백신이에요. 국가예방접종(무료).' },
+
+  { id:'hepb', name:'B형간염', disease:'B형간염', icon:'💧', where:NIP+'336',
+    free:(m)=> m<=12,
+    when:(m)=> m<=12 ? '생후 0·1·6개월 3회' : '위험군 0·1·6개월 3회',
+    status:(m,s,c,h)=> h.has('B형간염')?'done' : m<=12?'now' : (c.has('간질환')||c.has('면역저하'))?'now':'none',
+    why:(m)=> m<=12 ? '출생 직후부터 3회 접종하는 국가예방접종(무료)이에요.'
+                    : '만성 간질환·투석·감염자 접촉 등 위험군은 항체 확인 후 3회 접종을 권장해요.' },
+
+  { id:'dtap', name:'DTaP', disease:'디프테리아·파상풍·백일해', icon:'🩹', free:()=>true, where:NIP+'336',
+    when:'2·4·6개월, 15~18개월, 4~6세 (5회)',
+    status:(m)=> m<2 ? 'later' : (m<=72 ? 'now' : 'none'),
+    why:()=>'영유아 기본접종. 이후 만11세부터는 Tdap/Td로 이어져요. 국가예방접종(무료).' },
+
+  { id:'ipv', name:'폴리오(IPV)', disease:'소아마비', icon:'🦿', free:()=>true, where:NIP+'336',
+    when:'2·4·6개월, 4~6세 (4회)',
+    status:(m)=> m<2 ? 'later' : (m<=72 ? 'now' : 'none'),
+    why:()=>'소아마비를 예방하는 영유아 기본접종이에요. 국가예방접종(무료).' },
+
+  { id:'hib', name:'Hib', disease:'b형 헤모필루스 인플루엔자', icon:'🧫', free:(m)=> m<=15, where:NIP+'336',
+    when:(m)=> m<=15 ? '2·4·6개월, 12~15개월 (4회)' : '위험군 접종',
+    status:(m,s,c)=> m<=15 ? 'now' : (immuno(c)?'now':'none'),
+    why:(m)=> m<=15 ? '영유아 세균성 뇌수막염 예방접종(무료)이에요.'
+                    : '무비장·면역저하 등 위험군 성인은 접종을 권장해요.' },
+
+  { id:'pcv', name:'폐렴구균(PCV)', disease:'폐렴구균 감염', icon:'🫀', free:(m)=> m<=15, where:NIP+'334',
+    when:(m)=> m<=15 ? '2·4·6개월, 12~15개월 (4회)' : '위험군 PCV→PPSV23',
+    status:(m,s,c)=> m<=15 ? 'now' : (immuno(c)?'now':'none'),
+    why:(m)=> m<=15 ? '영유아 단백결합 폐렴구균 백신(무료)이에요.'
+                    : '면역저하·무비장 등 고위험군 성인은 결합백신(PCV) 접종을 권장해요.' },
+
+  { id:'ppsv', name:'폐렴구균(PPSV23)', disease:'폐렴구균 감염', icon:'🫁', where:NIP+'334',
+    free:(m)=> m>=65*Y,
+    when:(m)=> m>=65*Y ? '지금 · 1회 (보건소·지정 병의원)' : '만 65세 도래 시',
+    status:(m,s,c,h)=> h.has('폐렴구균')?'done' : (m>=65*Y||(m>=19*Y&&chronic(c)))?'now' : (m>=60*Y?'later':'none'),
+    why:(m)=> m>=65*Y ? '만 65세 이상은 국가예방접종으로 무료예요. 성인 주요 사망원인인 폐렴을 예방합니다.'
+                      : '만성질환·면역저하 성인은 65세 이전에도 접종을 권장해요(위험군).' },
+
+  { id:'tdap', name:'Tdap/Td', disease:'파상풍·디프테리아·백일해', icon:'💉', free:()=>false, where:NIP+'336',
+    when:(m,c)=> (c&&c.has('임신')) ? '임신 27~36주' : '만11세 1회 후 10년마다',
+    status:(m,s,c,h)=> h.has('Tdap')?'done' : (m>=11*Y?'now' : (m>=9*Y?'later':'none')),
+    why:(m,c)=> (c&&c.has('임신')) ? '임신 27~36주 접종 시 항체가 태아에게 전달돼 신생아 백일해를 예방해요.'
+                                  : '만11~12세 Tdap 1회 후 10년마다 Td 보강이 필요해요. 어릴 때 만든 면역은 약해집니다.' },
+
+  { id:'mmr', name:'MMR', disease:'홍역·유행성이하선염·풍진', icon:'🔴', where:NIP+'336',
+    free:(m)=> m<=72,
+    when:(m)=> m<=72 ? '12~15개월, 4~6세 (2회)' : '항체 없으면 1~2회',
+    status:(m,s,c,h)=> h.has('MMR')?'done' : (m>=12&&m<=72)?'now'
+                     : (m<12?'later' : (s==='여'&&m>=19*Y&&m<=45*Y&&!c.has('임신'))?'now':'none'),
+    why:(m)=> m<=72 ? '영유아 2회 접종하는 국가예방접종(무료)이에요.'
+                    : '항체가 없는 가임기 여성·의료인은 임신 전 접종을 권장해요(임신 중 금기).' },
+
+  { id:'var', name:'수두', disease:'수두', icon:'🌡️', where:NIP+'336',
+    free:(m)=> m<=15,
+    when:(m)=> m<=15 ? '12~15개월 1회' : '항체 없으면 2회(4~8주)',
+    status:(m,s,c,h)=> h.has('수두')?'done' : (m>=12&&m<=156)?'now' : (m<12?'later':'none'),
+    why:(m)=> m<=15 ? '생후 12~15개월 접종하는 국가예방접종(무료)이에요.'
+                    : '앓은 적도 접종한 적도 없다면 성인도 2회 접종을 권장해요.' },
+
+  { id:'hepa', name:'A형간염', disease:'A형간염', icon:'🧡', where:NIP+'336',
+    free:(m)=> m>=12&&m<=23,
+    when:(m)=> m<=23 ? '12~23개월 2회' : (m>=40*Y ? '항체검사 후 · 2회(0,6개월)' : '2회(0,6개월)'),
+    status:(m,s,c,h)=> h.has('A형간염')?'done' : (m>=12&&m<=23)?'now'
+                     : ((m>=20*Y&&m<50*Y)||c.has('간질환'))?'now':'none',
+    why:(m)=> m<=23 ? '2012년 이후 출생 어린이는 국가예방접종(무료)이에요.'
+                    : (m>=40*Y ? '40세 이상은 항체 보유율이 높아 검사 후 필요 시 접종해요. 간질환자는 우선 대상.'
+                               : '20~30대는 항체 공백 세대로, 2회 접종을 권장해요.') },
+
+  { id:'je', name:'일본뇌염', disease:'일본뇌염', icon:'🦟', free:(m)=> m<=156, where:NIP+'336',
+    when:'12개월~만12세 (불활성화 5회 / 생백신 2회)',
+    status:(m)=> m<12 ? 'later' : (m<=156 ? 'now' : 'none'),
+    why:()=>'모기가 옮기는 일본뇌염을 예방하는 소아 국가예방접종(무료)이에요.' },
+
+  { id:'rota', name:'로타바이러스', disease:'로타바이러스 장염', icon:'🍼', free:()=>true, where:NIP+'336',
+    when:'2·4(·6)개월 경구 2~3회',
+    status:(m)=> m<2 ? 'later' : (m<=8 ? 'now' : 'none'),
+    why:()=>'영아 설사·탈수를 일으키는 로타바이러스 예방 경구백신(무료)이에요.' },
+
+  { id:'hpv', name:'HPV', disease:'사람유두종바이러스(자궁경부암 등)', icon:'🎗️', where:NIP+'336',
+    free:(m)=> m>=144&&m<=156,
+    when:'만12세 2회 (성인 여성 만26세까지 권장)',
+    status:(m,s,c,h)=> h.has('HPV')?'done'
+      : (m>=144&&m<=156)?'now'
+      : (s==='여'&&m>156&&m<=26*Y)?'now'
+      : (m>=120&&m<144)?'later':'none',
+    why:(m)=> (m>=144&&m<=156) ? '만12세는 국가예방접종으로 무료예요. 자궁경부암 등을 예방합니다.'
+                               : '만26세까지 여성은 접종을 권장해요(지원 연령 외는 유료).' },
+
+  { id:'flu', name:'인플루엔자(독감)', disease:'인플루엔자', icon:'🤧', where:NIP+'333',
+    free:(m,c)=> m>=65*Y || c.has('임신') || (m>=6&&m<=156),
+    when:'매년 10~11월 (2025–2026절기)',
+    status:(m,s,c,h)=> h.has('독감')?'done' : (m>=6?'now':'later'),
+    why:(m,c)=> c&&c.has('임신') ? '임신부는 매년 접종을 권장하며 국가 무료 대상이에요.'
+             : (m>=65*Y||(m>=6&&m<=156)) ? '어린이(6개월~13세)·만65세 이상·임신부는 국가 무료예요. 매년 접종하세요.'
+             : '유행주가 매년 바뀌어 성인도 매년 맞아야 효과가 유지돼요.' },
+
+  { id:'hzv', name:'대상포진', disease:'대상포진', icon:'🔥', free:()=>false, where:NIP+'336',
+    when:'재조합백신 2회(2~6개월) · 비급여',
+    status:(m,s,c,h)=> h.has('대상포진')?'done' : (m>=50*Y||(immuno(c)&&m>=18*Y))?'now' : (m>=45*Y?'later':'none'),
+    why:(m,c)=> (c&&immuno(c)) ? '면역저하자는 18세 이상부터 재조합백신(RZV) 접종을 권장해요(생백신 금기).'
+                              : '만 50세 이상 재조합백신(RZV) 2회를 권장해요. 국가 무료는 아니지만 일부 지자체가 지원해요.' },
+
+  { id:'cov', name:'코로나19', disease:'COVID-19', icon:'🦠', where:NIP+'336',
+    free:(m,c)=> m>=65*Y || (c&&chronic(c)) || (c&&c.has('임신')),
+    when:'절기별 1회 (대상자 무료)',
+    status:(m,s,c,h)=> h.has('코로나19')?'done' : (m>=65*Y||chronic(c)||c.has('임신'))?'now':'none',
+    why:()=>'만65세 이상·기저질환자 등 고위험군은 절기 예방접종 대상(무료)이에요.' }
 ];
 
-/* ---------- render result ---------- */
+/* ---------- render ---------- */
+function ageToMonths(val, unit){ return unit==='month' ? val : val*12; }
+function ageLabel(m){
+  if(m<24) return '생후 '+m+'개월';
+  return '만 '+Math.floor(m/12)+'세';
+}
 function showResult(){
-  const age = parseInt(document.getElementById('age').value,10);
-  if(!age || age<1){ alert('나이를 입력해 주세요.'); return; }
+  const raw = parseInt(document.getElementById('age').value,10);
+  if(isNaN(raw) || raw<0){ alert('나이를 입력해 주세요.'); return; }
+  const unit = selected('unitChips')[0] || 'year';
+  const m = ageToMonths(raw, unit);
   const cond = new Set(selected('condChips'));
   const hist = new Set(selected('histChips'));
   const gender = selected('genderChips')[0] || '';
-  // pregnancy only meaningful for 여성; ignore if 남성 selected
   if(gender==='남') cond.delete('임신');
 
   const groups = {now:[], later:[], done:[]};
   VACCINES.forEach(v=>{
-    const s = v.status(age, cond, hist);
-    if(s==='none') return;
-    groups[s].push({v, free:v.free(age,cond)});
+    const st = v.status(m, gender, cond, hist);
+    if(st==='none') return;
+    groups[st].push({v, free: typeof v.free==='function' ? v.free(m,cond) : false, m, cond});
   });
 
-  // hero
   const n = groups.now.length;
   const head = document.getElementById('resultHead');
   head.innerHTML = n>0 ? `지금 <em>${n}가지</em>를 챙길 때예요` : `지금 새로 챙길 백신은 없어요 👍`;
-  const prof = [`만 ${age}세`, gender==='여'?'여성':gender==='남'?'남성':null,
-    [...cond].filter(x=>x!=='없음').join('·')||'기저질환 없음'].filter(Boolean).join(' · ');
+  const prof = [ageLabel(m), gender==='여'?'여성':gender==='남'?'남성':null,
+    [...cond].filter(x=>x!=='없음').join('·')||'특이사항 없음'].filter(Boolean).join(' · ');
   document.getElementById('resultProf').textContent = prof;
 
   const body = document.getElementById('resultBody');
-  body.innerHTML = '';
-  if(age<19){
-    head.innerHTML = '성인 예방접종 안내예요';
-    body.innerHTML = `<div class="empty">이 서비스는 만 19세 이상 성인 예방접종을 안내해요.<br>어린이·청소년은 표준예방접종일정을 확인해 주세요.</div>`;
-    go('result'); return;
-  }
-  body.innerHTML += renderGroup('지금 챙기세요', 'var(--now)', 'now', groups.now, age, cond)
-                  + renderGroup('나중에 챙기세요', 'var(--later)', 'later', groups.later, age, cond)
-                  + renderGroup('이미 완료', 'var(--done)', 'done', groups.done, age, cond);
+  body.innerHTML = renderGroup('지금 챙기세요','var(--now)','now',groups.now,m,cond)
+                 + renderGroup('앞으로 챙기세요','var(--later)','later',groups.later,m,cond)
+                 + renderGroup('완료·해당 없음','var(--done)','done',groups.done,m,cond);
   if(n===0 && groups.later.length===0){
-    body.innerHTML += `<div class="empty" style="margin-top:14px">현재 조건에서 새로 권장되는 접종이 없어요. 매년 독감 시즌은 잊지 마세요!</div>`;
+    body.innerHTML += `<div class="empty" style="margin-top:14px">현재 조건에서 새로 권장되는 접종이 없어요. 독감 시즌(매년 10~11월)은 잊지 마세요!</div>`;
   }
   go('result');
 }
-
-function renderGroup(title, color, cls, items, age, cond){
+function renderGroup(title,color,cls,items,m,cond){
   if(!items.length) return '';
   const cards = items.map(({v,free})=>{
-    const when = typeof v.when==='function' ? v.when(age,cond) : v.when;
-    const why = v.why(age,cond);
-    const badge = cls==='done' ? ''
+    const when = typeof v.when==='function' ? v.when(m,cond) : v.when;
+    const why  = typeof v.why==='function' ? v.why(m,cond) : v.why;
+    const badge = cls==='done' ? '<span class="badge paid">✔ 완료</span>'
       : free ? '<span class="badge free">무료</span>' : '<span class="badge paid">비급여</span>';
     const link = cls==='done' ? '' :
       `<a class="vx-link" href="${v.where}" target="_blank" rel="noopener">가까운 접종기관 찾기 ↗</a>`;
     return `<div class="card ${cls}">
       <div class="card-top">
         <span class="vx-icon">${v.icon}</span>
-        <span class="vx-name">${v.name}</span>
-        ${cls==='done' ? '<span class="badge paid">✔ 완료</span>' : badge}
+        <span class="vx-name">${v.name}<small>${v.disease}</small></span>
+        ${badge}
       </div>
-      <p class="vx-why">${cls==='done' ? '이미 접종하셨어요. 다음 주기에 다시 챙기면 돼요.' : why}</p>
-      <div class="vx-meta">
-        <span class="vx-when">🗓 ${when}</span>
-        ${link}
-      </div>
+      <p class="vx-why">${why}</p>
+      <div class="vx-meta"><span class="vx-when">🗓 ${when}</span>${link}</div>
     </div>`;
   }).join('');
   return `<div class="group">
@@ -429,9 +511,58 @@ function renderGroup(title, color, cls, items, age, cond){
     ${cards}
   </div>`;
 }
-
-/* allow Enter in age to submit */
 document.getElementById('age').addEventListener('keydown',e=>{ if(e.key==='Enter') showResult(); });
+
+/* ---------- 가족 프로필 (localStorage · 기기에만 저장) ---------- */
+const PKEY='vc_profiles';
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function loadProfiles(){ try{ return JSON.parse(localStorage.getItem(PKEY))||[]; }catch(e){ return []; } }
+function storeProfiles(a){ try{ localStorage.setItem(PKEY, JSON.stringify(a)); }catch(e){} }
+function readForm(){
+  return { age:document.getElementById('age').value, unit:selected('unitChips')[0]||'year',
+           gender:selected('genderChips')[0]||'', cond:selected('condChips'), hist:selected('histChips') };
+}
+function applyForm(p){
+  document.getElementById('age').value=p.age;
+  const us=document.querySelector('#unitChips .chip[data-v="'+(p.unit||'year')+'"]'); if(us) segToggle(us,'unitChips');
+  document.querySelectorAll('#genderChips .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+  if(p.gender) setSeg(p.gender);
+  ['condChips','histChips'].forEach(g=>document.querySelectorAll('#'+g+' .chip').forEach(c=>c.setAttribute('aria-pressed','false')));
+  (p.cond||[]).forEach(v=>setChip('condChips',v,true));
+  (p.hist||[]).forEach(v=>setChip('histChips',v,true));
+}
+function pfLabel(p){ const raw=parseInt(p.age,10); if(isNaN(raw)) return ''; return ageLabel(p.unit==='month'?raw:raw*12); }
+function renderProfiles(){
+  const arr=loadProfiles(), box=document.getElementById('profiles'), bar=document.getElementById('pfBar');
+  if(!arr.length){ box.style.display='none'; return; }
+  box.style.display='';
+  bar.innerHTML=arr.map(p=>`<span class="pf">
+    <button class="pf-load" onclick="loadProfile('${p.id}')">${escapeHtml(p.name)}<span class="pf-sub">${pfLabel(p)}</span></button>
+    <button class="pf-del" onclick="delProfile('${p.id}')" aria-label="삭제">×</button></span>`).join('');
+}
+function saveProfile(){
+  const f=readForm();
+  if(!f.age){ alert('나이를 먼저 입력해 주세요.'); return; }
+  const name=(prompt('프로필 이름을 정하세요 (예: 나, 첫째 아이)')||'').trim();
+  if(!name) return;
+  const arr=loadProfiles();
+  const id='p'+Date.now().toString(36);
+  arr.push(Object.assign({id,name},f));
+  storeProfiles(arr); renderProfiles(); flashHint('✓ ‘'+name+'’ 프로필을 이 기기에 저장했어요');
+}
+function loadProfile(id){
+  const p=loadProfiles().find(x=>x.id===id); if(!p) return;
+  applyForm(p); flashHint('‘'+p.name+'’ 정보를 불러왔어요'); window.scrollTo({top:0,behavior:'smooth'});
+}
+function delProfile(id){
+  storeProfiles(loadProfiles().filter(x=>x.id!==id)); renderProfiles();
+}
+renderProfiles();
+
+/* ---------- PWA: 오프라인·설치 (정적 앱) ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+}
 </script>
 </body>
 </html>
