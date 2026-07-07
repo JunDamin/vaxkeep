@@ -242,8 +242,18 @@
     </div>
 
     <div class="field">
-      <div class="label">여행 출발일 <span class="opt">선택 · 여행 전 접종 시점 계산</span></div>
+      <div class="label">여행 준비 <span class="opt">선택 · 출발일·여행지로 필요한 접종 계산</span></div>
       <input class="birth" id="travel" type="date" min="2026-01-01" />
+      <select class="birth" id="travelRegion" style="display:block;margin-top:10px">
+        <option value="">여행지 선택 (선택)</option>
+        <option value="sea">동남아시아 (태국·베트남 등)</option>
+        <option value="sasia">남아시아 (인도 등)</option>
+        <option value="ssafrica">아프리카 (사하라 이남)</option>
+        <option value="latam">중남미</option>
+        <option value="mideast">중동 (성지순례 등)</option>
+        <option value="eastasia">동아시아 (중국·일본 등)</option>
+        <option value="westdev">북미·서유럽·오세아니아</option>
+      </select>
     </div>
 
     <div class="field">
@@ -586,12 +596,14 @@ function storeProfiles(a){ try{ localStorage.setItem(PKEY, JSON.stringify(a)); }
 function readForm(){
   return { age:document.getElementById('age').value, unit:selected('unitChips')[0]||'year',
            birth:document.getElementById('birth').value, travel:document.getElementById('travel').value,
+           region:document.getElementById('travelRegion').value,
            gender:selected('genderChips')[0]||'', cond:selected('condChips'), hist:selected('histChips') };
 }
 function applyForm(p){
   document.getElementById('age').value=p.age;
   document.getElementById('birth').value=p.birth||'';
   document.getElementById('travel').value=p.travel||'';
+  document.getElementById('travelRegion').value=p.region||'';
   const us=document.querySelector('#unitChips .chip[data-v="'+(p.unit||'year')+'"]'); if(us) segToggle(us,'unitChips');
   document.querySelectorAll('#genderChips .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
   if(p.gender) setSeg(p.gender);
@@ -647,30 +659,54 @@ function activeAlerts(){
   return a;
 }
 
-/* 여행 모드 */
+/* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
 function getTravel(){ const v=document.getElementById('travel').value; if(!v) return null; const d=new Date(v); return isNaN(d)?null:d; }
+function getRegion(){ return document.getElementById('travelRegion').value; }
 function fmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
+/* 여행 백신: lead=출발 전 접종 권장 일수, required=입국요건(필수). ⚠️ 검증 중(질병청 해외여행질병정보) */
+const TVAX={
+  hepa:{name:'A형간염', lead:14, note:'개도국 여행 시 광범위 권장'},
+  typhoid:{name:'장티푸스', lead:14, note:'오염 음식·물 위험 지역'},
+  je:{name:'일본뇌염', lead:14, note:'아시아 농촌·장기 체류'},
+  yf:{name:'황열', lead:10, required:true, note:'접종증명서 입국요건 국가 있음(최소 10일 전 접종)'},
+  meningo:{name:'수막구균', lead:14, note:'수막염 벨트·사우디 성지순례(입국요건)'},
+  rabies:{name:'광견병', lead:21, note:'장기·오지 체류, 동물 접촉 위험'},
+  tdap:{name:'파상풍(Td/Tdap)', lead:14, note:'모든 여행자 기본 최신화'},
+  flu:{name:'인플루엔자', lead:14, note:'단체·연중 유행 지역'}
+};
+const REGION_VAX={
+  sea:['hepa','typhoid','je','tdap'], sasia:['hepa','typhoid','je','rabies','tdap'],
+  ssafrica:['yf','hepa','typhoid','meningo','tdap'], latam:['yf','hepa','typhoid','tdap'],
+  mideast:['hepa','typhoid','meningo','tdap'], eastasia:['hepa','tdap','flu'], westdev:['tdap','flu']
+};
 function renderTravel(groups){
-  const box=document.getElementById('travelBox'), tv=getTravel();
-  if(!tv){ box.innerHTML=''; return; }
-  const T=new Date(), dday=Math.ceil((tv - T)/86400000), items=[];
-  [...groups.now, ...groups.later].forEach(x=>{ const mo=metaOf(x.v.id); if(!mo.travel) return;
-    const startBy=new Date(tv.getTime() - (mo.onset||2)*7*86400000);
-    let stat, cls;
-    if(T<=startBy){ stat='여유 · '+fmtDate(startBy)+'까지 접종'; cls='ok'; }
-    else if(T<tv){ stat='촉박 · 지금 바로'; cls='warn'; }
-    else { stat='출발일 지남'; cls='warn'; }
-    items.push({nm:x.v.name, onset:mo.onset||2, series:mo.series, stat, cls});
-  });
-  if(!items.length){ box.innerHTML=`<div class="travel"><div class="pace-h">✈️ 여행 전 준비</div><div class="pace-sub">이 프로필에 여행 관련 권장 접종이 없어요. 여행지(국가)별 필수 백신은 별도 확인이 필요해요.</div></div>`; return; }
-  const rows=items.map(it=>`<div class="tv-item ${it.cls}">
-     <div class="tv-name">${it.nm}<small>접종 후 약 ${it.onset}주 뒤 효과${it.series?' · '+it.series:''}</small></div>
-     <div class="tv-stat">${it.stat}</div></div>`).join('');
+  const box=document.getElementById('travelBox'), tv=getTravel(), region=getRegion();
+  if(!tv && !region){ box.innerHTML=''; return; }
+  const T=new Date(), dday = tv? Math.ceil((tv - T)/86400000) : null;
+  const deadline=(lead)=>{ if(!tv) return {stat:'출발 '+Math.ceil(lead/7)+'주 전', cls:'ok'};
+    const by=new Date(tv.getTime()-lead*86400000);
+    if(T<=by) return {stat:fmtDate(by)+'까지', cls:'ok'};
+    if(T<tv)  return {stat:'촉박 · 지금 바로', cls:'warn'};
+    return {stat:'출발일 지남', cls:'warn'}; };
+  let rows='';
+  if(region && REGION_VAX[region]){
+    rows = REGION_VAX[region].map(k=>{ const t=TVAX[k]; const d=deadline(t.lead);
+      const tag = t.required? ' <span class="badge alert">입국요건</span>':'';
+      return `<div class="tv-item ${d.cls}"><div class="tv-name">${t.name}${tag}<small>${t.note}</small></div><div class="tv-stat">${d.stat}</div></div>`;
+    }).join('');
+  } else if(tv){
+    rows = [...groups.now,...groups.later].map(x=>{ const mo=metaOf(x.v.id); if(!mo.travel) return '';
+      const d=deadline((mo.onset||2)*7);
+      return `<div class="tv-item ${d.cls}"><div class="tv-name">${x.v.name}<small>접종 후 약 ${mo.onset}주 뒤 효과${mo.series?' · '+mo.series:''}</small></div><div class="tv-stat">${d.stat}</div></div>`;
+    }).join('');
+  }
+  const sub = region ? '여행지 기준 권장·필수 접종이에요. 효과·증명서가 유효하려면 아래 시점까지 접종하세요.'
+                     : '백신은 효과가 나타나기까지 시간이 걸려요. 여행지를 선택하면 국가별 필수 백신까지 알려드려요.';
   box.innerHTML=`<div class="travel">
-     <div class="pace-h">✈️ 여행 전 준비 <span style="font-weight:600;color:var(--muted);font-size:13px">${dday>=0?'D-'+dday:'출발 지남'}</span></div>
-     <div class="pace-sub">백신은 효과가 나타나기까지 시간이 걸려요. 출발 전 완료하려면 아래 시점까지 접종하세요.</div>
-     ${rows}
-     <div class="pace-sub" style="margin-top:12px">※ 국가·지역별 필수 백신(황열·장티푸스·말라리아 등)은 여행지 기준 별도 확인이 필요해요(지역 연동은 2단계).</div>
+     <div class="pace-h">✈️ 여행 전 준비 <span style="font-weight:600;color:var(--muted);font-size:13px">${tv?(dday>=0?'D-'+dday:'출발 지남'):''}</span></div>
+     <div class="pace-sub">${sub}</div>
+     ${rows||'<div class="pace-sub">해당 권장 접종이 없어요.</div>'}
+     <div class="pace-sub" style="margin-top:12px">※ 국가별 최종 필수 여부·말라리아 예방약 등은 <a href="https://www.kdca.go.kr" target="_blank" rel="noopener" style="color:#26456f;font-weight:700">질병청 해외여행질병정보</a>에서 확인하세요.</div>
    </div>`;
 }
 
