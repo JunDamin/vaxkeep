@@ -21,9 +21,14 @@
 자연어 파싱·개인화 설명은 Claude API 키를 숨겨야 해 **serverless 함수**가 필요합니다. `api/parse.js`·`api/explain.js`(Anthropic SDK)가 준비돼 있습니다.
 
 1. 이 저장소를 [Vercel](https://vercel.com/new)에 import (또는 `npx vercel`).
-2. 환경변수 **`ANTHROPIC_API_KEY`** 추가 (Anthropic 콘솔에서 발급).
+2. 환경변수 추가 (Vercel → Settings → Environment Variables):
+   - **`ANTHROPIC_API_KEY`** — Anthropic 콘솔 발급 (parse/explain LLM용).
+   - **`DATA_GO_KR_KEY`** — 공공데이터포털 **Decoding 인증키** (vaccineinfo용, data.go.kr/15084296 활용신청).
+   - (선택) **`FLU_CSV_URL`** — 질병청 인플루엔자 표본감시 CSV 직링크(있으면 outbreak 실시간, 없으면 시즌 규칙 폴백).
 3. 배포되면 API URL이 나옵니다(예: `https://vaxkeep-xxxx.vercel.app`).
-4. `index.html`의 `const AI_API = ''` 를 그 URL로 바꿔 재배포 → 자연어 자동채우기·"쉬운 말로 설명" 이 LLM으로 동작.
+4. `index.html`의 `const AI_API = ''` 를 그 URL로 바꿔 재배포 → LLM + 실시간 공공데이터가 켜짐.
+
+**엔드포인트 4종:** `/api/parse`(자연어 파싱), `/api/explain`(개인화 설명), `/api/vaccineinfo`(질병청 예방접종 API 실시간 프록시), `/api/outbreak`(독감 유행 경보·best-effort). 프론트는 미설정 시 각각 휴리스틱/규칙/시즌으로 **자동 폴백**하므로 정적 사이트도 계속 작동.
 
 - 모델: `claude-opus-4-8` (비용 우선이면 `api/*.js`에서 `claude-haiku-4-5`로 교체 가능).
 - 프론트는 API 미설정 시 **휴리스틱 파서로 자동 폴백**하므로 정적 사이트도 계속 작동합니다.

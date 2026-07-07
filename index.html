@@ -125,6 +125,7 @@
   .acc-msg{color:var(--muted);font-size:12.5px;margin-top:7px}
   .extra-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
   .extra-row .btn{flex:1;min-width:150px;margin-top:0}
+  .data-status{margin-top:12px;color:var(--now);font-size:12px;font-weight:700}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -344,6 +345,7 @@
         반드시 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a> 표준일정표와 관할 보건소·의료진을 통해 확인하세요.
         질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>.
       </div>
+      <div id="dataStatus" class="data-status"></div>
     </div>
 
     <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 가족 프로필로 저장</button>
@@ -642,7 +644,7 @@ function startApp(){
   document.getElementById('extraRow').style.display='none';
   liveUpdate();
   showStep(STEP_ORDER.find(s=>!answered.has(s)) || 'age');
-  refreshOutbreak();
+  refreshOutbreak(); refreshDataStatus();
 }
 function showStep(id){
   curStep = id;
@@ -826,6 +828,14 @@ async function refreshOutbreak(){
     const d=await r.json();
     if(d && d.flu){ liveOutbreak=d; if(document.getElementById('resultArea').style.display!=='none') liveUpdate(); }
   }catch(e){}
+}
+async function refreshDataStatus(){
+  const el=document.getElementById('dataStatus'); if(!el) return;
+  if(!AI_API){ el.innerHTML=''; return; }
+  try{
+    const r=await fetch(AI_API+'/api/vaccineinfo'); const d=await r.json();
+    el.innerHTML = d && d.connected ? '🔗 질병청 예방접종 공공데이터 실시간 연결됨 · '+d.count+'종' : '';
+  }catch(e){ el.innerHTML=''; }
 }
 
 /* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
