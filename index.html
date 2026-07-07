@@ -125,7 +125,10 @@
   .acc-msg{color:var(--muted);font-size:12.5px;margin-top:7px}
   .extra-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
   .extra-row .btn{flex:1;min-width:150px;margin-top:0}
-  .data-status{margin-top:12px;color:var(--now);font-size:12px;font-weight:700}
+  .data-status{margin-top:12px}
+  .data-link{background:none;border:none;color:var(--now);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:0}
+  .vax-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .vax-tag{background:var(--now-soft);color:var(--now);border-radius:8px;padding:4px 9px;font-size:11.5px;font-weight:600}
 
   .badge.alert{background:#FBE9E4;color:#B23B1E}
   .alert-banner{margin-top:14px;background:#FBE9E4;border:1px solid #F3C9BD;color:#8F2E16;border-radius:12px;padding:12px 15px;font-size:13.5px;font-weight:600}
@@ -829,13 +832,22 @@ async function refreshOutbreak(){
     if(d && d.flu){ liveOutbreak=d; if(document.getElementById('resultArea').style.display!=='none') liveUpdate(); }
   }catch(e){}
 }
+let liveVaxList=null;
 async function refreshDataStatus(){
   const el=document.getElementById('dataStatus'); if(!el) return;
   if(!AI_API){ el.innerHTML=''; return; }
   try{
     const r=await fetch(AI_API+'/api/vaccineinfo'); const d=await r.json();
-    el.innerHTML = d && d.connected ? '🔗 질병청 예방접종 공공데이터 실시간 연결됨 · '+d.count+'종' : '';
+    if(d && d.connected){
+      liveVaxList=d.items||[];
+      el.innerHTML='<button class="data-link" onclick="toggleVaxList()">🔗 질병청 예방접종 공공데이터 실시간 연결됨 · '+d.count+'종 ▾</button><div id="vaxList" class="vax-list" style="display:none"></div>';
+    } else el.innerHTML='';
   }catch(e){ el.innerHTML=''; }
+}
+function toggleVaxList(){
+  const box=document.getElementById('vaxList'); if(!box) return;
+  if(box.style.display==='none'){ box.innerHTML=(liveVaxList||[]).map(x=>'<span class="vax-tag">'+escapeHtml(x.name||x.cd)+'</span>').join(''); box.style.display='flex'; }
+  else box.style.display='none';
 }
 
 /* 여행 모드 — 출발일 + 여행지(권역)별 권장·필수 백신 */
