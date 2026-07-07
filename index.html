@@ -384,7 +384,7 @@ function selected(group){
 }
 
 /* ---------- natural-language quick-fill (heuristic, no backend) ---------- */
-const AI_API = ''; // 2단계: Vercel API URL(예 'https://vaxkeep-api.vercel.app') 입력 시 LLM 파싱·설명 활성화
+const AI_API = 'https://vaxkeep.vercel.app'; // 2단계 API(Vercel). 키 미설정 시 각 기능 폴백
 let lastResult = null;
 async function autofill(){
   const t = (document.getElementById('nlText').value||'').replace(/\s+/g,' ').trim();
