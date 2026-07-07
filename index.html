@@ -237,28 +237,7 @@
 
     <div class="summary-chips" id="summaryBar" style="display:none"></div>
 
-    <!-- 결과: 항상 위, 나이 입력 후 표시 -->
-    <div id="resultArea" style="display:none">
-      <div class="result-hero">
-        <p class="result-eyebrow">이 사람을 위한 결정</p>
-        <h2 id="resultHead">—</h2>
-        <p class="prof" id="resultProf"></p>
-      </div>
-      <div id="alertBanner"></div>
-      <div id="resultBody"></div>
-      <div id="travelBox"></div>
-      <div id="paceBox"></div>
-      <button class="btn btn-save btn-block explain-btn" onclick="explain()">✨ 쉬운 말로 설명 듣기 (AI)</button>
-      <div id="aiExplain"></div>
-      <div class="disclaimer">
-        <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
-        <b>비진단 참고 도구</b>예요(2025–2026 기준). 정확한 차수·간격·무료 대상은 연도·지자체에 따라 다를 수 있어
-        반드시 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a> 표준일정표와 관할 보건소·의료진을 통해 확인하세요.
-        질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>.
-      </div>
-    </div>
-
-    <!-- 질문: 한 번에 하나 -->
+    <!-- 질문: 한 번에 하나 (위) -->
     <div id="questionArea">
       <div class="accuracy" id="accuracy"></div>
 
@@ -343,7 +322,28 @@
 
     <div class="extra-row" id="extraRow" style="display:none">
       <button class="btn btn-save" onclick="addTravel()">✈️ 여행 계획 추가</button>
-      <button class="btn btn-cal" onclick="scrollTopResult()">✓ 완료 · 결과 보기</button>
+      <button class="btn btn-cal" onclick="scrollTopResult()">✓ 완료</button>
+    </div>
+
+    <!-- 결과: 질문 아래에서 실시간으로 채워짐 -->
+    <div id="resultArea" style="display:none">
+      <div class="result-hero">
+        <p class="result-eyebrow">이 사람을 위한 결정</p>
+        <h2 id="resultHead">—</h2>
+        <p class="prof" id="resultProf"></p>
+      </div>
+      <div id="alertBanner"></div>
+      <div id="resultBody"></div>
+      <div id="travelBox"></div>
+      <div id="paceBox"></div>
+      <button class="btn btn-save btn-block explain-btn" onclick="explain()">✨ 쉬운 말로 설명 듣기 (AI)</button>
+      <div id="aiExplain"></div>
+      <div class="disclaimer">
+        <b>참고용 정보입니다.</b> 질병관리청 국가예방접종(NIP) 표준일정과 대한감염학회(KSID) 권고를 규칙으로 요약한
+        <b>비진단 참고 도구</b>예요(2025–2026 기준). 정확한 차수·간격·무료 대상은 연도·지자체에 따라 다를 수 있어
+        반드시 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">예방접종도우미</a> 표준일정표와 관할 보건소·의료진을 통해 확인하세요.
+        질환·백신 근거는 <a href="https://health.kdca.go.kr" target="_blank" rel="noopener" style="color:var(--now);font-weight:700">국가건강정보포털</a>.
+      </div>
     </div>
 
     <button class="btn btn-save btn-block" onclick="saveProfile()">＋ 가족 프로필로 저장</button>
@@ -658,9 +658,7 @@ function stepHasValue(id){
   return false;
 }
 function afterAnswer(){
-  const wasAge = (curStep==='age');
   renderSummary(); liveUpdate();
-  if(wasAge){ const ra=document.getElementById('resultArea'); if(ra&&ra.style.display!=='none') ra.scrollIntoView({behavior:'smooth',block:'start'}); }
   if(editing){ editing=false; showStep(null); document.getElementById('extraRow').style.display='flex'; return; }
   const i=STEP_ORDER.indexOf(curStep);
   if(i>=0 && i<STEP_ORDER.length-1){ showStep(STEP_ORDER[i+1]); }
